@@ -25,16 +25,6 @@ function vazio(valor) {
   );
 }
 
-/**
- * Define exatamente quais colunas podem
- * voltar para o navegador.
- *
- * IMPORTANTE:
- * campos do tipo senha nunca são selecionados.
- *
- * Isso impede que senha_hash seja enviado
- * para o painel ao carregar equipe/clientes.
- */
 function colunasSeguras(config) {
   const colunas = new Set(["id"]);
 
@@ -49,13 +39,6 @@ function colunasSeguras(config) {
   return Array.from(colunas).join(",");
 }
 
-/**
- * Segurança extra.
- *
- * Mesmo que alguma consulta futura passe
- * senha_hash acidentalmente, removemos antes
- * de devolver ao navegador.
- */
 function sanitizarItem(item) {
   if (!item || typeof item !== "object") {
     return item;
@@ -71,10 +54,6 @@ function sanitizarItem(item) {
   return copia;
 }
 
-/**
- * Confere os campos obrigatórios definidos
- * em src/lib/recursos.js.
- */
 function validarObrigatorios(
   config,
   corpo,
@@ -101,18 +80,38 @@ function validarObrigatorios(
   return null;
 }
 
-/**
- * Regras especiais para um agendamento
- * criado manualmente pelo painel.
- *
- * O navegador NÃO decide:
- *
- * - preço;
- * - duração;
- * - horário final.
- *
- * Tudo isso vem do banco.
- */
+async function unidadeEfetivaDoProfissional({
+  profissionalId,
+  unidadePadraoId,
+  dataLocal,
+}) {
+  const {
+    data,
+    error,
+  } = await db
+    .from("profissional_locais_data")
+    .select("unidade_id")
+    .eq(
+      "profissional_id",
+      profissionalId
+    )
+    .eq(
+      "data",
+      dataLocal
+    )
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (
+    data?.unidade_id ||
+    unidadePadraoId ||
+    null
+  );
+}
+
 async function prepararAgendamento(
   dados
 ) {
@@ -128,17 +127,26 @@ async function prepararAgendamento(
       50
     );
 
+  const unidadeId =
+    texto(
+      dados.unidade_id,
+      50
+    );
+
   if (
     !UUID_RE.test(
       profissionalId
     ) ||
     !UUID_RE.test(
       servicoId
+    ) ||
+    !UUID_RE.test(
+      unidadeId
     )
   ) {
     return {
       erro:
-        "Serviço ou profissional inválido.",
+        "Serviço, profissional ou unidade inválidos.",
       status: 400,
     };
   }
@@ -160,10 +168,6 @@ async function prepararAgendamento(
     };
   }
 
-  /**
-   * Evita criação de agendamento
-   * em horário passado.
-   */
   if (
     inicio.getTime() <=
     Date.now()
@@ -175,13 +179,24 @@ async function prepararAgendamento(
     };
   }
 
-  /**
-   * Confirma serviço e profissional
-   * diretamente no banco.
-   */
+  const dataLocal =
+    diaLocal(
+      inicio
+    );
+
+  if (!dataLocal) {
+    return {
+      erro:
+        "Não foi possível determinar o dia do agendamento.",
+      status: 400,
+    };
+  }
+
   const [
     servicoResp,
     profissionalResp,
+    unidadeResp,
+    profissionalServicoResp,
   ] = await Promise.all([
     db
       .from("servicos")
@@ -197,11 +212,39 @@ async function prepararAgendamento(
     db
       .from("usuarios")
       .select(
-        "id, papel, ativo"
+        "id, papel, ativo, unidade_id"
       )
       .eq(
         "id",
         profissionalId
+      )
+      .maybeSingle(),
+
+    db
+      .from("unidades")
+      .select(
+        "id, ativo"
+      )
+      .eq(
+        "id",
+        unidadeId
+      )
+      .maybeSingle(),
+
+    db
+      .from(
+        "profissional_servicos"
+      )
+      .select(
+        "profissional_id"
+      )
+      .eq(
+        "profissional_id",
+        profissionalId
+      )
+      .eq(
+        "servico_id",
+        servicoId
       )
       .maybeSingle(),
   ]);
@@ -216,16 +259,25 @@ async function prepararAgendamento(
     throw profissionalResp.error;
   }
 
+  if (unidadeResp.error) {
+    throw unidadeResp.error;
+  }
+
+  if (
+    profissionalServicoResp.error
+  ) {
+    throw profissionalServicoResp.error;
+  }
+
   const servico =
     servicoResp.data;
 
   const profissional =
     profissionalResp.data;
 
-  /**
-   * Serviço precisa existir e
-   * estar disponível.
-   */
+  const unidade =
+    unidadeResp.data;
+
   if (
     !servico ||
     !servico.ativo
@@ -237,10 +289,6 @@ async function prepararAgendamento(
     };
   }
 
-  /**
-   * Profissional precisa ser
-   * um colaborador ativo.
-   */
   if (
     !profissional ||
     profissional.papel !==
@@ -254,9 +302,47 @@ async function prepararAgendamento(
     };
   }
 
-  /**
-   * A duração oficial vem do serviço.
-   */
+  if (
+    !unidade ||
+    !unidade.ativo
+  ) {
+    return {
+      erro:
+        "Essa unidade não está disponível.",
+      status: 400,
+    };
+  }
+
+  if (
+    !profissionalServicoResp.data
+  ) {
+    return {
+      erro:
+        "Esse profissional não realiza o serviço selecionado.",
+      status: 400,
+    };
+  }
+
+  const unidadeEfetiva =
+    await unidadeEfetivaDoProfissional({
+      profissionalId,
+      unidadePadraoId:
+        profissional.unidade_id,
+      dataLocal,
+    });
+
+  if (
+    !unidadeEfetiva ||
+    unidadeEfetiva !==
+      unidadeId
+  ) {
+    return {
+      erro:
+        "Esse profissional não atende nessa unidade na data escolhida.",
+      status: 400,
+    };
+  }
+
   const duracao =
     Number(
       servico.duracao_min
@@ -277,33 +363,11 @@ async function prepararAgendamento(
     };
   }
 
-  /**
-   * Calcula automaticamente
-   * quando o atendimento termina.
-   *
-   * Exemplo:
-   *
-   * Corte social:
-   * início 14:00
-   * duração 40 min
-   *
-   * fim = 14:40
-   */
   const fim =
     new Date(
       inicio.getTime() +
         duracao *
           60000
-    );
-
-  /**
-   * Descobre o dia local da barbearia
-   * para consultar apenas os agendamentos
-   * daquela data.
-   */
-  const dataLocal =
-    diaLocal(
-      inicio
     );
 
   const {
@@ -321,10 +385,6 @@ async function prepararAgendamento(
     };
   }
 
-  /**
-   * Um registro já criado como cancelado
-   * não precisa reservar horário.
-   */
   if (
     dados.status !==
     "cancelado"
@@ -360,19 +420,6 @@ async function prepararAgendamento(
       throw error;
     }
 
-    /**
-     * Detecta qualquer sobreposição.
-     *
-     * Exemplo:
-     *
-     * existente:
-     * 14:00 -> 14:40
-     *
-     * tentativa:
-     * 14:30 -> 15:10
-     *
-     * conflito = verdadeiro
-     */
     const conflita =
       (
         ocupados || []
@@ -423,10 +470,6 @@ async function prepararAgendamento(
     }
   }
 
-  /**
-   * Sobrescreve qualquer valor
-   * que tenha vindo do navegador.
-   */
   return {
     dados: {
       ...dados,
@@ -437,6 +480,9 @@ async function prepararAgendamento(
       servico_id:
         servicoId,
 
+      unidade_id:
+        unidadeId,
+
       inicio:
         inicio.toISOString(),
 
@@ -446,17 +492,12 @@ async function prepararAgendamento(
       preco:
         Number(
           servico.preco ||
-            0
+          0
         ),
     },
   };
 }
 
-/**
- * GET /api/admin/[recurso]
- *
- * Lista os registros para o painel.
- */
 export async function GET(
   req,
   {
@@ -483,8 +524,9 @@ export async function GET(
       );
     }
 
-    const recurso =
-      params.recurso;
+    const {
+      recurso,
+    } = await params;
 
     const config =
       pegarRecurso(
@@ -508,16 +550,6 @@ export async function GET(
         recurso
       );
 
-    /**
-     * Antes:
-     *
-     * select("*")
-     *
-     * Isso enviava senha_hash de usuarios.
-     *
-     * Agora selecionamos somente os
-     * campos necessários para o painel.
-     */
     const colunas =
       colunasSeguras(
         config
@@ -532,15 +564,6 @@ export async function GET(
           colunas
         );
 
-    /**
-     * Exemplo:
-     *
-     * equipe:
-     * papel = colaborador
-     *
-     * clientes:
-     * papel = cliente
-     */
     if (
       config.filtroFixo
     ) {
@@ -556,10 +579,6 @@ export async function GET(
         );
     }
 
-    /**
-     * Ordenação configurada
-     * em recursos.js.
-     */
     if (
       config.ordenar
     ) {
@@ -578,9 +597,6 @@ export async function GET(
         );
     }
 
-    /**
-     * Campo de busca.
-     */
     const busca =
       texto(
         new URL(
@@ -656,11 +672,6 @@ export async function GET(
   }
 }
 
-/**
- * POST /api/admin/[recurso]
- *
- * Cria registros pelo painel.
- */
 export async function POST(
   req,
   {
@@ -687,8 +698,9 @@ export async function POST(
       );
     }
 
-    const recurso =
-      params.recurso;
+    const {
+      recurso,
+    } = await params;
 
     const config =
       pegarRecurso(
@@ -707,13 +719,23 @@ export async function POST(
       );
     }
 
-    const corpo =
-      await req.json();
+    let corpo;
 
-    /**
-     * Validação dos campos
-     * obrigatórios.
-     */
+    try {
+      corpo =
+        await req.json();
+    } catch {
+      return NextResponse.json(
+        {
+          erro:
+            "Corpo da requisição inválido.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const erroObrigatorio =
       validarObrigatorios(
         config,
@@ -746,18 +768,6 @@ export async function POST(
         recurso
       );
 
-    /**
-     * Equipe e clientes utilizam
-     * a tabela usuarios.
-     *
-     * montarPayload transforma:
-     *
-     * senha
-     *
-     * em:
-     *
-     * senha_hash
-     */
     if (
       tabela ===
         "usuarios" &&
@@ -774,9 +784,6 @@ export async function POST(
       );
     }
 
-    /**
-     * Padroniza o e-mail.
-     */
     if (dados.email) {
       dados.email =
         texto(
@@ -785,9 +792,6 @@ export async function POST(
         ).toLowerCase();
     }
 
-    /**
-     * Regras especiais da agenda.
-     */
     if (
       recurso ===
       "agendamentos"
@@ -817,10 +821,6 @@ export async function POST(
         preparado.dados;
     }
 
-    /**
-     * Também no retorno do INSERT
-     * usamos apenas colunas seguras.
-     */
     const colunas =
       colunasSeguras(
         config
@@ -842,6 +842,21 @@ export async function POST(
       .single();
 
     if (error) {
+      if (
+        error.code ===
+        "23P01"
+      ) {
+        return NextResponse.json(
+          {
+            erro:
+              "Esse horário já está sendo usado por outro atendimento.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
       return NextResponse.json(
         {
           erro:

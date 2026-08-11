@@ -4,6 +4,7 @@ import { exigirPapel } from "@/lib/auth";
 import { pegarRecurso, tabelaDe } from "@/lib/recursos";
 import { montarPayload } from "@/lib/payload";
 import { diaLocal, limitesDoDia } from "@/lib/formato";
+import { resolverUnidadeEfetiva } from "@/lib/unidades";
 
 export const dynamic = "force-dynamic";
 
@@ -123,7 +124,7 @@ async function prepararAgendamentoParaEdicao(
 
     db
       .from("usuarios")
-      .select("id, papel, ativo")
+      .select("id, papel, ativo, unidade_id")
       .eq("id", profissionalId)
       .maybeSingle(),
   ]);
@@ -161,6 +162,9 @@ async function prepararAgendamentoParaEdicao(
       status: 400,
     };
   }
+  const dataLocalAgendamento = diaLocal(inicio);
+  const unidadeEfetiva = await resolverUnidadeEfetiva(profissionalId, dataLocalAgendamento, profissional.unidade_id);
+  if (!UUID_RE.test(texto(dados.unidade_id, 50)) || unidadeEfetiva !== dados.unidade_id) return { erro: "O profissional não atende na unidade selecionada nessa data.", status: 400 };
 
   const duracao = Number(
     servico.duracao_min
@@ -312,6 +316,7 @@ async function possuiDependencias(
   id
 ) {
   const verificacoes = {
+    unidades: [["usuarios", "unidade_id"], ["agendamentos", "unidade_id"]],
     equipe: [
       [
         "agendamentos",
@@ -529,6 +534,23 @@ export async function PUT(
 
       dados =
         preparado.dados;
+    }
+
+    if (recurso === "equipe" && dados.unidade_id) {
+      const { data: futuros = [], error: erroFuturos } = await db
+        .from("agendamentos")
+        .select("inicio,unidade_id")
+        .eq("profissional_id", id)
+        .neq("status", "cancelado")
+        .gte("inicio", new Date().toISOString());
+      if (erroFuturos) throw erroFuturos;
+      for (const agendamento of futuros) {
+        const dataAgendamento = diaLocal(new Date(agendamento.inicio));
+        const efetiva = await resolverUnidadeEfetiva(id, dataAgendamento, dados.unidade_id);
+        if (efetiva !== agendamento.unidade_id) {
+          return NextResponse.json({ erro: "Não é possível alterar a unidade padrão: existem agendamentos ativos futuros associados a outra unidade/data." }, { status: 409 });
+        }
+      }
     }
 
     if (

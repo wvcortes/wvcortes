@@ -4,15 +4,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        tinta: "#14100E",
-        couro: "#6B1F2A",
-        couroClaro: "#8A2C39",
-        latao: "#C8A24A",
-        latauEscuro: "#9C7A2E",
-        marfim: "#F5EFE6",
-        papel: "#FBF8F3",
-        fumaca: "#8A8078",
-        linha: "#E2D9CC",
+        tinta: "#08110f",
+        couro: "#123f35",
+        couroClaro: "#1b594a",
+        latao: "#c8a969",
+        latauEscuro: "#9d7d3f",
+        marfim: "#f2f0e9",
+        papel: "#fbfaf6",
+        fumaca: "#756f66",
+        linha: "#dcd7cc",
       },
       fontFamily: {
         display: ["'Bodoni Moda'", "Georgia", "serif"],
@@ -20,7 +20,7 @@ module.exports = {
         mono: ["'IBM Plex Mono'", "ui-monospace", "monospace"],
       },
       boxShadow: {
-        carta: "0 1px 2px rgba(20,16,14,.06), 0 12px 32px -12px rgba(20,16,14,.18)",
+        carta: "0 1px 2px rgba(8,17,15,.05), 0 18px 48px -24px rgba(8,17,15,.24)",
       },
     },
   },

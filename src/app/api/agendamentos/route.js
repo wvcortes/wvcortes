@@ -6,6 +6,7 @@ import {
 } from "@/lib/db";
 import { usuarioAtual } from "@/lib/auth";
 import { montarInstante } from "@/lib/formato";
+import { resolverUnidadeEfetiva } from "@/lib/unidades";
 
 export const dynamic = "force-dynamic";
 
@@ -351,6 +352,7 @@ export async function POST(
     const obrigatorios = [
       "nome_cliente",
       "telefone_cliente",
+      "unidade_id",
       "profissional_id",
       "servico_id",
       "data",
@@ -403,7 +405,7 @@ export async function POST(
         1000
       ) || null;
 
-    const profissionalId =
+    let profissionalId =
       texto(
         corpo.profissional_id,
         50
@@ -414,6 +416,7 @@ export async function POST(
         corpo.servico_id,
         50
       );
+    const unidadeId = texto(corpo.unidade_id, 50);
 
     const dataInformada =
       texto(
@@ -469,7 +472,7 @@ export async function POST(
     }
 
     if (
-      !UUID_RE.test(
+      !UUID_RE.test(unidadeId) || !UUID_RE.test(
         profissionalId
       ) ||
       !UUID_RE.test(
@@ -502,6 +505,9 @@ export async function POST(
       );
     }
 
+    const usuarioAutenticado = await usuarioAtual().catch(() => null);
+    if (usuarioAutenticado?.papel === "colaborador") profissionalId = usuarioAutenticado.id;
+
     const [
       respostaServico,
       respostaProfissional,
@@ -525,7 +531,7 @@ export async function POST(
             "usuarios"
           )
           .select(
-            "id, papel, ativo"
+            "id, papel, ativo, unidade_id"
           )
           .eq(
             "id",
@@ -579,6 +585,11 @@ export async function POST(
         400
       );
     }
+    const unidadeEfetiva = await resolverUnidadeEfetiva(profissionalId, dataInformada, profissional.unidade_id);
+    if (unidadeEfetiva !== unidadeId) return resposta({ erro: "O profissional não atende na unidade selecionada nessa data." }, 400);
+    const { data: habilitado, error: erroHabilitado } = await db.from("profissional_servicos").select("profissional_id").eq("profissional_id", profissionalId).eq("servico_id", servicoId).maybeSingle();
+    if (erroHabilitado) throw erroHabilitado;
+    if (!habilitado) return resposta({ erro: "Esse profissional não realiza o serviço selecionado." }, 400);
 
     const duracao =
       Number(
@@ -740,6 +751,15 @@ export async function POST(
       );
     }
 
+    const { data: jornadas = [], error: erroJornada } = await db.from("profissional_horarios").select("hora_inicio,hora_fim").eq("profissional_id", profissionalId).eq("dia_semana", diaDaSemana(dataInformada)).eq("ativo", true);
+    if (erroJornada) throw erroJornada;
+    const dentroDaJornada = jornadas.some((jornada) => {
+      const ji = montarInstante(dataInformada, String(jornada.hora_inicio || "").slice(0, 5));
+      const jf = montarInstante(dataInformada, String(jornada.hora_fim || "").slice(0, 5));
+      return !Number.isNaN(ji.getTime()) && inicio >= ji && fim <= jf;
+    });
+    if (!dentroDaJornada) return resposta({ erro: "Esse horário está fora da jornada do profissional." }, 400);
+
     const inicioMin =
       minutos(
         horarioInformado
@@ -824,10 +844,7 @@ export async function POST(
      * cliente_id nunca é aceito
      * diretamente do navegador.
      */
-    const usuario =
-      await usuarioAtual().catch(
-        () => null
-      );
+    const usuario = usuarioAutenticado;
 
     const clienteId =
       usuario?.papel ===
@@ -843,6 +860,7 @@ export async function POST(
         "agendamentos"
       )
       .insert({
+        unidade_id: unidadeId,
         cliente_id:
           clienteId,
 
@@ -878,6 +896,7 @@ export async function POST(
 
         status:
           "agendado",
+        origem: usuario?.papel === "colaborador" ? texto(corpo.origem, 40) || "manual" : "site",
       })
       .select(
         [

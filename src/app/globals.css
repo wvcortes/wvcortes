@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --tinta: #14100e;
-  --couro: #6b1f2a;
-  --latao: #c8a24a;
-  --marfim: #f5efe6;
-  --papel: #fbf8f3;
-  --linha: #e2d9cc;
+  --tinta: #08110f;
+  --couro: #123f35;
+  --latao: #c8a969;
+  --marfim: #f2f0e9;
+  --papel: #fbfaf6;
+  --linha: #dcd7cc;
 }
 
 html,
@@ -16,6 +16,10 @@ body {
   background: var(--marfim);
   color: var(--tinta);
 }
+
+html { scroll-behavior: smooth; }
+body { overflow-x: hidden; }
+::selection { background: var(--latao); color: var(--tinta); }
 
 body {
   font-family: Karla, system-ui, sans-serif;
@@ -45,13 +49,13 @@ body {
 
 /* Faixa fina inspirada no poste de barbeiro. Usada uma única vez. */
 .poste {
-  height: 6px;
+  height: 4px;
   background: repeating-linear-gradient(
     115deg,
-    var(--couro) 0 14px,
-    var(--marfim) 14px 28px,
-    var(--latao) 28px 42px,
-    var(--marfim) 42px 56px
+    #8e2527 0 12px,
+    var(--marfim) 12px 24px,
+    #244f75 24px 36px,
+    var(--marfim) 36px 48px
   );
 }
 
@@ -67,8 +71,27 @@ textarea {
 }
 
 *:focus-visible {
-  outline: 2px solid var(--couro);
+  outline: 2px solid var(--latao);
   outline-offset: 2px;
+}
+
+@layer components {
+  .secao { @apply mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8; }
+  .titulo-secao { @apply mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl; }
+  .superficie { @apply rounded-2xl border border-linha bg-papel shadow-carta; }
+  .card-premium { @apply rounded-2xl border border-linha bg-papel transition duration-300 hover:-translate-y-1 hover:border-latao/60 hover:shadow-carta; }
+}
+
+/* Superfícies de trabalho: consistência sem reduzir densidade dos painéis. */
+main table thead { background: rgba(18, 63, 53, .055); }
+main table tbody tr { transition: background-color .18s ease; }
+main table tbody tr:hover { background: rgba(18, 63, 53, .035); }
+main button, main a { -webkit-tap-highlight-color: transparent; }
+
+@media (max-width: 639px) {
+  .linha-preco { gap: .45rem; }
+  .linha-preco .pontos { min-width: 12px; }
+  input, select, textarea { font-size: 16px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -30,7 +30,7 @@ create extension if not exists btree_gist;
 
 create table if not exists barbearia (
   id                  int primary key default 1,
-  nome                text not null default 'Navalha Barbearia',
+  nome                text not null default 'WV Cortes',
   slogan              text default 'Corte, barba e cuidado com hora marcada.',
   sobre               text default 'Uma barbearia de bairro com padrão de alfaiataria.',
   telefone            text default '(00) 0000-0000',

@@ -1,4 +1,4 @@
-# Navalha · SaaS para barbearia
+# WV Cortes · Sistema para barbearia
 
 Sistema completo em **Next.js (Node.js)** com site público, painel do dono,
 área do colaborador e área do cliente. Feito para rodar na **Vercel** com banco

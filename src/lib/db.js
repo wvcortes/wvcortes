@@ -107,7 +107,7 @@ const BARBEARIA_PADRAO = Object.freeze({
   id: 1,
 
   nome:
-    "Navalha Barbearia",
+    "WV Cortes",
 
   slogan:
     "Corte, barba e cuidado com hora marcada.",
@@ -134,6 +134,10 @@ const BARBEARIA_PADRAO = Object.freeze({
     "Terca a sabado",
 
   intervalo_min: 30,
+  pix_chave: "",
+  pix_nome_recebedor: "",
+  pix_cidade: "",
+  biografia_wenderson: "",
 });
 
 /**
@@ -166,6 +170,10 @@ export async function pegarBarbearia() {
         "hora_fechamento",
         "dias_funcionamento",
         "intervalo_min",
+        "pix_chave",
+        "pix_nome_recebedor",
+        "pix_cidade",
+        "biografia_wenderson",
       ].join(",")
     )
     .eq(

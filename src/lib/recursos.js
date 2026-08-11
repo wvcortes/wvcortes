@@ -34,6 +34,16 @@ import { montarInstante } from "./formato";
  */
 
 export const RECURSOS = {
+  unidades: {
+    titulo: "Unidades WV Cortes",
+    singular: "unidade",
+    descricao: "Unidades disponíveis para equipe e agendamentos. Desative em vez de excluir unidades com histórico.",
+    ordenar: { coluna: "nome", crescente: true },
+    campos: [
+      { nome: "nome", rotulo: "Nome", tipo: "texto", obrigatorio: true },
+      { nome: "ativo", rotulo: "Ativa", tipo: "booleano", padrao: true },
+    ],
+  },
   servicos: {
     titulo: "Serviços e procedimentos",
     singular: "serviço",
@@ -104,6 +114,7 @@ export const RECURSOS = {
     },
 
     campos: [
+      { nome: "foto_url", rotulo: "URL da foto", tipo: "texto", naTabela: false },
       {
         nome: "nome",
         rotulo: "Nome",
@@ -248,6 +259,9 @@ export const RECURSOS = {
         tipo: "texto",
         obrigatorio: true,
       },
+      { nome: "whatsapp_pessoal", rotulo: "WhatsApp pessoal (privado)", tipo: "texto", naTabela: false },
+      { nome: "foto_url", rotulo: "URL da foto", tipo: "texto", naTabela: false },
+      { nome: "unidade_id", rotulo: "Unidade", tipo: "relacao", relacao: { recurso: "unidades", rotulo: "nome" }, obrigatorio: true },
       {
         nome: "senha",
         rotulo: "Senha",
@@ -424,6 +438,7 @@ export const RECURSOS = {
     },
 
     campos: [
+      { nome: "unidade_id", rotulo: "Unidade", tipo: "relacao", relacao: { recurso: "unidades", rotulo: "nome" }, obrigatorio: true },
       {
         nome: "nome_cliente",
         rotulo: "Cliente",

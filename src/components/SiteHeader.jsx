@@ -1,72 +1,46 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const links = [
   { href: "/servicos", texto: "Serviços" },
   { href: "/planos", texto: "Planos" },
-  { href: "/agendar", texto: "Agenda" },
+  { href: "/produtos", texto: "Produtos" },
 ];
 
 export default function SiteHeader({ barbearia, usuario }) {
   const [aberto, setAberto] = useState(false);
-  const destino =
-    usuario?.papel === "admin"
-      ? "/painel"
-      : usuario?.papel === "colaborador"
-      ? "/colaborador"
-      : "/cliente";
+  const caminho = usePathname();
+  const destino = usuario?.papel === "admin" ? "/painel" : usuario?.papel === "colaborador" ? "/colaborador" : "/cliente";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-tinta/10 bg-marfim/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-        <Link href="/" className="leading-none">
-          <span className="font-display text-2xl font-semibold tracking-tight">
-            {barbearia?.nome || "Navalha"}
-          </span>
-          <span className="etiqueta ml-3 hidden text-tinta/45 sm:inline">est. barbearia</span>
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-tinta/95 text-marfim shadow-lg shadow-black/10 backdrop-blur-xl">
+      <div className="poste" />
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="group flex min-w-0 items-center gap-3" aria-label="WV Cortes — início">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-latao/50 font-display text-sm font-bold text-latao">WV</span>
+          <span className="truncate font-display text-xl font-semibold tracking-wide sm:text-2xl">{barbearia?.nome || "WV Cortes"}</span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} className="etiqueta text-tinta/70 hover:text-couro">
-              {l.texto}
-            </Link>
-          ))}
-          {usuario ? (
-            <Link href={destino} className="etiqueta bg-tinta px-4 py-2.5 text-marfim hover:bg-couro">
-              {usuario.papel === "cliente" ? "Minha conta" : "Painel"}
-            </Link>
-          ) : (
-            <Link href="/entrar" className="etiqueta bg-tinta px-4 py-2.5 text-marfim hover:bg-couro">
-              Entrar
-            </Link>
-          )}
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegação principal">
+          {links.map((l) => <Link key={l.href} href={l.href} className={`rounded-lg px-4 py-2 text-sm transition ${caminho === l.href ? "bg-white/10 text-latao" : "text-marfim/70 hover:bg-white/5 hover:text-marfim"}`}>{l.texto}</Link>)}
         </nav>
 
-        <button
-          className="etiqueta md:hidden"
-          onClick={() => setAberto((v) => !v)}
-          aria-expanded={aberto}
-          aria-label="Abrir menu"
-        >
-          {aberto ? "fechar" : "menu"}
+        <div className="hidden items-center gap-2 lg:flex">
+          <Link href={usuario ? destino : "/entrar"} className="rounded-lg px-4 py-2 text-sm text-marfim/70 transition hover:text-white">{usuario ? "Minha conta" : "Entrar"}</Link>
+          <Link href="/agendar" className="rounded-lg bg-latao px-5 py-2.5 text-sm font-bold text-tinta transition hover:bg-white">Agendar horário</Link>
+        </div>
+
+        <button type="button" className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/15 lg:hidden" onClick={() => setAberto(v => !v)} aria-expanded={aberto} aria-controls="menu-mobile" aria-label={aberto ? "Fechar menu" : "Abrir menu"}>
+          <span className="text-xl" aria-hidden="true">{aberto ? "×" : "☰"}</span>
         </button>
       </div>
-
       {aberto && (
-        <div className="border-t border-tinta/10 bg-marfim px-5 py-4 md:hidden">
-          <div className="flex flex-col gap-4">
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} className="etiqueta" onClick={() => setAberto(false)}>
-                {l.texto}
-              </Link>
-            ))}
-            <Link href={usuario ? destino : "/entrar"} className="etiqueta text-couro">
-              {usuario ? "Minha conta" : "Entrar"}
-            </Link>
-          </div>
-        </div>
+        <nav id="menu-mobile" className="border-t border-white/10 bg-tinta px-4 pb-5 pt-3 lg:hidden" aria-label="Navegação mobile">
+          {[...links, { href: "/agendar", texto: "Agendar horário" }].map(l => <Link key={l.href} href={l.href} className="block rounded-lg px-4 py-3 text-base text-marfim/85 hover:bg-white/5" onClick={() => setAberto(false)}>{l.texto}</Link>)}
+          <Link href={usuario ? destino : "/entrar"} className="mt-2 block rounded-lg border border-latao/40 px-4 py-3 text-center font-semibold text-latao" onClick={() => setAberto(false)}>{usuario ? "Minha conta" : "Entrar"}</Link>
+        </nav>
       )}
     </header>
   );

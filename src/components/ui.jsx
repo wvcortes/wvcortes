@@ -3,11 +3,11 @@ import Link from "next/link";
 
 export function Botao({ children, variante = "solido", href, className = "", ...props }) {
   const base =
-    "inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold tracking-wide transition disabled:opacity-50 disabled:cursor-not-allowed";
+    "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold tracking-wide transition duration-200 disabled:cursor-not-allowed disabled:opacity-50";
   const estilos = {
-    solido: "bg-couro text-marfim hover:bg-couroClaro",
-    latao: "bg-latao text-tinta hover:bg-latauEscuro hover:text-marfim",
-    contorno: "border border-tinta/25 text-tinta hover:border-couro hover:text-couro",
+    solido: "bg-couro text-marfim shadow-sm hover:bg-couroClaro hover:shadow-md",
+    latao: "bg-latao text-tinta hover:bg-white",
+    contorno: "border border-tinta/20 text-tinta hover:border-couro hover:bg-couro/5 hover:text-couro",
     claro: "bg-marfim text-tinta hover:bg-white",
     discreto: "text-tinta/70 hover:text-couro px-2 py-1",
   };
@@ -27,7 +27,7 @@ export function Campo({ rotulo, ajuda, children }) {
 }
 
 export const entradaCls =
-  "w-full border border-linha bg-papel px-3 py-2.5 text-sm text-tinta placeholder:text-fumaca/70 focus:border-couro focus:outline-none";
+  "w-full min-h-11 rounded-lg border border-linha bg-papel px-3.5 py-2.5 text-sm text-tinta shadow-sm placeholder:text-fumaca/70 focus:border-couro focus:outline-none focus:ring-2 focus:ring-couro/10";
 
 export function Entrada(props) {
   return <input {...props} className={`${entradaCls} ${props.className || ""}`} />;
@@ -35,7 +35,7 @@ export function Entrada(props) {
 
 export function Cartao({ children, className = "" }) {
   return (
-    <div className={`border border-linha bg-papel shadow-carta ${className}`}>{children}</div>
+    <div className={`rounded-2xl border border-linha bg-papel shadow-carta ${className}`}>{children}</div>
   );
 }
 

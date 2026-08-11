@@ -4,7 +4,7 @@ import { pegarBarbearia } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
-  let nome = "Navalha Barbearia";
+  let nome = "WV Cortes";
   let slogan = "Corte, barba e cuidado com hora marcada.";
   try {
     const b = await pegarBarbearia();

@@ -8,9 +8,13 @@ export const dynamic = "force-dynamic";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const DATA_RE = /^\d{4}-\d{2}-\d{2}$/;
+const DATA_RE =
+  /^\d{4}-\d{2}-\d{2}$/;
 
-const TIPOS_VALIDOS = ["servico", "produto"];
+const TIPOS_VALIDOS = [
+  "servico",
+  "produto",
+];
 
 const PAGAMENTOS_VALIDOS = [
   "Dinheiro",
@@ -19,65 +23,115 @@ const PAGAMENTOS_VALIDOS = [
   "Crédito",
 ];
 
-function resposta(corpo, status = 200) {
-  return NextResponse.json(corpo, {
-    status,
-    headers: {
-      "Cache-Control": "no-store",
-    },
-  });
+const COLUNAS_VENDA = [
+  "id",
+  "colaborador_id",
+  "cliente_id",
+  "tipo",
+  "servico_id",
+  "produto_id",
+  "descricao",
+  "quantidade",
+  "valor",
+  "forma_pagamento",
+  "criado_em",
+].join(",");
+
+function resposta(
+  corpo,
+  status = 200
+) {
+  return NextResponse.json(
+    corpo,
+    {
+      status,
+
+      headers: {
+        "Cache-Control":
+          "no-store",
+      },
+    }
+  );
 }
 
-function texto(valor, limite = 255) {
-  return String(valor ?? "")
+function texto(
+  valor,
+  limite = 255
+) {
+  return String(
+    valor ?? ""
+  )
     .trim()
-    .slice(0, limite);
+    .slice(
+      0,
+      limite
+    );
 }
 
-function dataValida(valor) {
-  if (!DATA_RE.test(valor)) {
+function dataValida(
+  valor
+) {
+  if (
+    !DATA_RE.test(
+      valor
+    )
+  ) {
     return false;
   }
 
-  const [ano, mes, dia] = valor
+  const [
+    ano,
+    mes,
+    dia,
+  ] = valor
     .split("-")
     .map(Number);
 
-  const teste = new Date(
-    Date.UTC(ano, mes - 1, dia)
-  );
+  const teste =
+    new Date(
+      Date.UTC(
+        ano,
+        mes - 1,
+        dia
+      )
+    );
 
   return (
-    teste.getUTCFullYear() === ano &&
-    teste.getUTCMonth() === mes - 1 &&
-    teste.getUTCDate() === dia
+    teste.getUTCFullYear() ===
+      ano &&
+    teste.getUTCMonth() ===
+      mes - 1 &&
+    teste.getUTCDate() ===
+      dia
   );
 }
 
-function numero(valor) {
-  const convertido = Number(
-    String(valor ?? "").replace(",", ".")
-  );
-
-  return Number.isFinite(convertido)
-    ? convertido
-    : null;
-}
-
-function inteiroPositivo(valor, padrao = 1) {
+function inteiroPositivo(
+  valor,
+  padrao = 1
+) {
   if (
-    valor === undefined ||
-    valor === null ||
-    valor === ""
+    valor ===
+      undefined ||
+    valor ===
+      null ||
+    valor ===
+      ""
   ) {
     return padrao;
   }
 
-  const convertido = Number(valor);
+  const convertido =
+    Number(
+      valor
+    );
 
   if (
-    !Number.isInteger(convertido) ||
-    convertido < 1
+    !Number.isInteger(
+      convertido
+    ) ||
+    convertido <
+      1
   ) {
     return null;
   }
@@ -85,13 +139,41 @@ function inteiroPositivo(valor, padrao = 1) {
   return convertido;
 }
 
+function erroPareceEstoque(
+  error
+) {
+  const mensagem =
+    String(
+      error?.message ||
+        error?.details ||
+        error?.hint ||
+        ""
+    ).toLowerCase();
+
+  return (
+    mensagem.includes(
+      "estoque"
+    ) ||
+    mensagem.includes(
+      "stock"
+    ) ||
+    mensagem.includes(
+      "quantidade disponível"
+    )
+  );
+}
+
 async function obterUsuarioAutorizado() {
   const usuario =
-    await usuarioAtual().catch(() => null);
+    await usuarioAtual()
+      .catch(
+        () => null
+      );
 
   if (
     !usuario ||
-    usuario.papel === "cliente"
+    usuario.papel ===
+      "cliente"
   ) {
     return null;
   }
@@ -103,25 +185,27 @@ async function validarColaborador(
   usuario,
   colaboradorInformado
 ) {
-  /**
-   * Colaborador nunca pode lançar venda
-   * em nome de outro colaborador.
-   */
-  if (usuario.papel === "colaborador") {
+  if (
+    usuario.papel ===
+    "colaborador"
+  ) {
     return {
-      id: usuario.id,
+      id:
+        usuario.id,
     };
   }
 
-  /**
-   * Admin precisa informar um colaborador real.
-   */
-  const colaboradorId = texto(
-    colaboradorInformado,
-    50
-  );
+  const colaboradorId =
+    texto(
+      colaboradorInformado,
+      50
+    );
 
-  if (!UUID_RE.test(colaboradorId)) {
+  if (
+    !UUID_RE.test(
+      colaboradorId
+    )
+  ) {
     return {
       erro:
         "Selecione um colaborador válido.",
@@ -132,9 +216,16 @@ async function validarColaborador(
     data,
     error,
   } = await db
-    .from("usuarios")
-    .select("id, papel, ativo")
-    .eq("id", colaboradorId)
+    .from(
+      "usuarios"
+    )
+    .select(
+      "id, papel, ativo"
+    )
+    .eq(
+      "id",
+      colaboradorId
+    )
     .maybeSingle();
 
   if (error) {
@@ -143,7 +234,8 @@ async function validarColaborador(
 
   if (
     !data ||
-    data.papel !== "colaborador" ||
+    data.papel !==
+      "colaborador" ||
     !data.ativo
   ) {
     return {
@@ -153,7 +245,8 @@ async function validarColaborador(
   }
 
   return {
-    id: data.id,
+    id:
+      data.id,
   };
 }
 
@@ -161,28 +254,38 @@ async function validarItemCatalogo(
   tipo,
   id
 ) {
-  if (!UUID_RE.test(id)) {
+  if (
+    !UUID_RE.test(
+      id
+    )
+  ) {
     return {
       erro:
-        tipo === "produto"
+        tipo ===
+        "produto"
           ? "Produto inválido."
           : "Serviço inválido.",
     };
   }
 
-  /**
-   * Serviço.
-   */
-  if (tipo === "servico") {
+  if (
+    tipo ===
+    "servico"
+  ) {
     const {
       data,
       error,
     } = await db
-      .from("servicos")
+      .from(
+        "servicos"
+      )
       .select(
         "id, nome, preco, ativo"
       )
-      .eq("id", id)
+      .eq(
+        "id",
+        id
+      )
       .maybeSingle();
 
     if (error) {
@@ -200,22 +303,25 @@ async function validarItemCatalogo(
     }
 
     return {
-      item: data,
+      item:
+        data,
     };
   }
 
-  /**
-   * Produto.
-   */
   const {
     data,
     error,
   } = await db
-    .from("produtos")
+    .from(
+      "produtos"
+    )
     .select(
       "id, nome, preco, estoque, ativo"
     )
-    .eq("id", id)
+    .eq(
+      "id",
+      id
+    )
     .maybeSingle();
 
   if (error) {
@@ -233,20 +339,330 @@ async function validarItemCatalogo(
   }
 
   return {
-    item: data,
+    item:
+      data,
   };
 }
 
-/**
- * GET /api/vendas?data=2026-08-10
- *
- * Colaborador:
- * vê somente as próprias vendas.
- *
- * Admin:
- * pode consultar todas.
- */
-export async function GET(req) {
+function normalizarItensProduto(
+  itens
+) {
+  if (
+    !Array.isArray(
+      itens
+    )
+  ) {
+    return {
+      erro:
+        "Comanda de produtos inválida.",
+    };
+  }
+
+  if (
+    itens.length <
+    1
+  ) {
+    return {
+      erro:
+        "Adicione pelo menos um produto à comanda.",
+    };
+  }
+
+  if (
+    itens.length >
+    100
+  ) {
+    return {
+      erro:
+        "A comanda possui produtos demais.",
+    };
+  }
+
+  const agrupados =
+    new Map();
+
+  for (
+    const item
+    of itens
+  ) {
+    const produtoId =
+      texto(
+        item?.produto_id ||
+          item?.id,
+        50
+      );
+
+    const quantidade =
+      inteiroPositivo(
+        item?.quantidade,
+        1
+      );
+
+    if (
+      !UUID_RE.test(
+        produtoId
+      )
+    ) {
+      return {
+        erro:
+          "Produto inválido na comanda.",
+      };
+    }
+
+    if (
+      quantidade ===
+        null ||
+      quantidade >
+        999
+    ) {
+      return {
+        erro:
+          "Informe uma quantidade válida para todos os produtos.",
+      };
+    }
+
+    const atual =
+      agrupados.get(
+        produtoId
+      ) || 0;
+
+    const novaQuantidade =
+      atual +
+      quantidade;
+
+    if (
+      novaQuantidade >
+      999
+    ) {
+      return {
+        erro:
+          "A quantidade total de um produto não pode ultrapassar 999 unidades.",
+      };
+    }
+
+    agrupados.set(
+      produtoId,
+      novaQuantidade
+    );
+  }
+
+  return {
+    itens:
+      Array.from(
+        agrupados.entries()
+      ).map(
+        ([
+          produto_id,
+          quantidade,
+        ]) => ({
+          produto_id,
+          quantidade,
+        })
+      ),
+  };
+}
+
+async function prepararVendaProdutosEmLote({
+  usuario,
+  corpo,
+}) {
+  const colaborador =
+    await validarColaborador(
+      usuario,
+      corpo?.colaborador_id
+    );
+
+  if (
+    colaborador.erro
+  ) {
+    return {
+      erro:
+        colaborador.erro,
+
+      status:
+        400,
+    };
+  }
+
+  const formaPagamento =
+    texto(
+      corpo?.forma_pagamento ||
+        "Dinheiro",
+      30
+    );
+
+  if (
+    !PAGAMENTOS_VALIDOS
+      .includes(
+        formaPagamento
+      )
+  ) {
+    return {
+      erro:
+        "Forma de pagamento inválida.",
+
+      status:
+        400,
+    };
+  }
+
+  const normalizado =
+    normalizarItensProduto(
+      corpo?.itens
+    );
+
+  if (
+    normalizado.erro
+  ) {
+    return {
+      erro:
+        normalizado.erro,
+
+      status:
+        400,
+    };
+  }
+
+  const ids =
+    normalizado.itens.map(
+      (
+        item
+      ) =>
+        item.produto_id
+    );
+
+  const {
+    data:
+      produtosBanco = [],
+    error,
+  } = await db
+    .from(
+      "produtos"
+    )
+    .select(
+      "id, nome, preco, estoque, ativo"
+    )
+    .in(
+      "id",
+      ids
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  const mapaProdutos =
+    new Map(
+      (
+        produtosBanco ||
+        []
+      ).map(
+        (
+          produto
+        ) => [
+          produto.id,
+          produto,
+        ]
+      )
+    );
+
+  const linhas = [];
+
+  for (
+    const item
+    of normalizado.itens
+  ) {
+    const produto =
+      mapaProdutos.get(
+        item.produto_id
+      );
+
+    if (
+      !produto ||
+      !produto.ativo
+    ) {
+      return {
+        erro:
+          "Um dos produtos da comanda não está mais disponível.",
+
+        status:
+          400,
+      };
+    }
+
+    const estoque =
+      Number(
+        produto.estoque ??
+        0
+      );
+
+    if (
+      !Number.isFinite(
+        estoque
+      ) ||
+      estoque <
+        item.quantidade
+    ) {
+      return {
+        erro:
+          `Estoque insuficiente para ${produto.nome}. Disponível: ${Math.max(
+            0,
+            Number.isFinite(
+              estoque
+            )
+              ? estoque
+              : 0
+          )}.`,
+
+        status:
+          409,
+      };
+    }
+
+    linhas.push({
+      colaborador_id:
+        colaborador.id,
+
+      cliente_id:
+        null,
+
+      tipo:
+        "produto",
+
+      servico_id:
+        null,
+
+      produto_id:
+        produto.id,
+
+      descricao:
+        texto(
+          produto.nome,
+          250
+        ),
+
+      quantidade:
+        item.quantidade,
+
+      valor:
+        Number(
+          produto.preco ||
+          0
+        ),
+
+      forma_pagamento:
+        formaPagamento,
+    });
+  }
+
+  return {
+    linhas,
+  };
+}
+
+export async function GET(
+  req
+) {
   try {
     conferirAmbiente();
 
@@ -256,20 +672,26 @@ export async function GET(req) {
     if (!usuario) {
       return resposta(
         {
-          erro: "Sem permissão.",
+          erro:
+            "Sem permissão.",
         },
         403
       );
     }
 
     const parametros =
-      new URL(req.url).searchParams;
+      new URL(
+        req.url
+      ).searchParams;
 
-    const dataInformada = texto(
-      parametros.get("data") ||
-        diaLocal(),
-      10
-    );
+    const dataInformada =
+      texto(
+        parametros.get(
+          "data"
+        ) ||
+          diaLocal(),
+        10
+      );
 
     if (
       !dataValida(
@@ -278,7 +700,9 @@ export async function GET(req) {
     ) {
       return resposta(
         {
-          erro: "Data inválida.",
+          erro:
+            "Data inválida.",
+
           itens: [],
         },
         400
@@ -292,52 +716,45 @@ export async function GET(req) {
       dataInformada
     );
 
-    if (!de || !ate) {
+    if (
+      !de ||
+      !ate
+    ) {
       return resposta(
         {
-          erro: "Data inválida.",
+          erro:
+            "Data inválida.",
+
           itens: [],
         },
         400
       );
     }
 
-    let consulta = db
-      .from("vendas")
-      .select(
-        [
-          "id",
-          "colaborador_id",
-          "cliente_id",
-          "tipo",
-          "servico_id",
-          "produto_id",
-          "descricao",
-          "quantidade",
-          "valor",
-          "forma_pagamento",
+    let consulta =
+      db
+        .from(
+          "vendas"
+        )
+        .select(
+          COLUNAS_VENDA
+        )
+        .gte(
           "criado_em",
-        ].join(",")
-      )
-      .gte(
-        "criado_em",
-        de
-      )
-      .lte(
-        "criado_em",
-        ate
-      )
-      .order(
-        "criado_em",
-        {
-          ascending: false,
-        }
-      );
+          de
+        )
+        .lte(
+          "criado_em",
+          ate
+        )
+        .order(
+          "criado_em",
+          {
+            ascending:
+              false,
+          }
+        );
 
-    /**
-     * Colaborador só enxerga
-     * as próprias vendas.
-     */
     if (
       usuario.papel ===
       "colaborador"
@@ -350,11 +767,13 @@ export async function GET(req) {
     }
 
     const {
-      data: itens,
+      data:
+        itens,
       error,
-    } = await consulta.limit(
-      1000
-    );
+    } =
+      await consulta.limit(
+        1000
+      );
 
     if (error) {
       throw error;
@@ -362,7 +781,8 @@ export async function GET(req) {
 
     return resposta({
       itens:
-        itens || [],
+        itens ||
+        [],
     });
   } catch (e) {
     console.error(
@@ -373,7 +793,8 @@ export async function GET(req) {
     return resposta(
       {
         erro:
-          process.env.NODE_ENV ===
+          process.env
+            .NODE_ENV ===
           "development"
             ? e?.message ||
               "Não foi possível carregar as vendas."
@@ -384,15 +805,9 @@ export async function GET(req) {
   }
 }
 
-/**
- * POST /api/vendas
- *
- * Lançamento rápido pelo colaborador.
- *
- * Admin também pode utilizar esta rota,
- * mas precisa informar um colaborador válido.
- */
-export async function POST(req) {
+export async function POST(
+  req
+) {
   try {
     conferirAmbiente();
 
@@ -402,7 +817,8 @@ export async function POST(req) {
     if (!usuario) {
       return resposta(
         {
-          erro: "Sem permissão.",
+          erro:
+            "Sem permissão.",
         },
         403
       );
@@ -442,16 +858,18 @@ export async function POST(req) {
       );
     }
 
-    const tipo = texto(
-      corpo?.tipo ||
-        "servico",
-      20
-    ).toLowerCase();
+    const tipo =
+      texto(
+        corpo?.tipo ||
+          "servico",
+        20
+      ).toLowerCase();
 
     if (
-      !TIPOS_VALIDOS.includes(
-        tipo
-      )
+      !TIPOS_VALIDOS
+        .includes(
+          tipo
+        )
     ) {
       return resposta(
         {
@@ -462,10 +880,77 @@ export async function POST(req) {
       );
     }
 
-    /**
-     * Descobre em nome de qual colaborador
-     * a venda será lançada.
-     */
+    if (
+      tipo ===
+        "produto" &&
+      Array.isArray(
+        corpo?.itens
+      )
+    ) {
+      const preparado =
+        await prepararVendaProdutosEmLote({
+          usuario,
+          corpo,
+        });
+
+      if (
+        preparado.erro
+      ) {
+        return resposta(
+          {
+            erro:
+              preparado.erro,
+          },
+          preparado.status ||
+            400
+        );
+      }
+
+      const {
+        data,
+        error,
+      } = await db
+        .from(
+          "vendas"
+        )
+        .insert(
+          preparado.linhas
+        )
+        .select(
+          COLUNAS_VENDA
+        );
+
+      if (error) {
+        if (
+          erroPareceEstoque(
+            error
+          )
+        ) {
+          return resposta(
+            {
+              erro:
+                "O estoque mudou enquanto a comanda era finalizada. Revise as quantidades e tente novamente.",
+            },
+            409
+          );
+        }
+
+        throw error;
+      }
+
+      return resposta(
+        {
+          itens:
+            data || [],
+
+          item:
+            data?.[0] ||
+            null,
+        },
+        201
+      );
+    }
+
     const colaborador =
       await validarColaborador(
         usuario,
@@ -484,9 +969,6 @@ export async function POST(req) {
       );
     }
 
-    /**
-     * Quantidade.
-     */
     const quantidade =
       inteiroPositivo(
         corpo?.quantidade,
@@ -494,8 +976,10 @@ export async function POST(req) {
       );
 
     if (
-      quantidade === null ||
-      quantidade > 999
+      quantidade ===
+        null ||
+      quantidade >
+        999
     ) {
       return resposta(
         {
@@ -506,38 +990,6 @@ export async function POST(req) {
       );
     }
 
-    /**
-     * Valor UNITÁRIO.
-     *
-     * O painel calcula:
-     *
-     * valor × quantidade
-     *
-     * para obter o total.
-     */
-    const valor =
-      numero(
-        corpo?.valor
-      );
-
-    if (
-      valor === null ||
-      valor < 0 ||
-      valor >
-        999999.99
-    ) {
-      return resposta(
-        {
-          erro:
-            "Informe um valor válido.",
-        },
-        400
-      );
-    }
-
-    /**
-     * Forma de pagamento.
-     */
     const formaPagamento =
       texto(
         corpo?.forma_pagamento ||
@@ -546,9 +998,10 @@ export async function POST(req) {
       );
 
     if (
-      !PAGAMENTOS_VALIDOS.includes(
-        formaPagamento
-      )
+      !PAGAMENTOS_VALIDOS
+        .includes(
+          formaPagamento
+        )
     ) {
       return resposta(
         {
@@ -559,12 +1012,10 @@ export async function POST(req) {
       );
     }
 
-    /**
-     * Serviço ou produto oficial do banco.
-     */
     const catalogoId =
       texto(
-        tipo === "servico"
+        tipo ===
+          "servico"
           ? corpo?.servico_id
           : corpo?.produto_id,
         50
@@ -588,11 +1039,6 @@ export async function POST(req) {
       );
     }
 
-    /**
-     * A descrição pode ser personalizada,
-     * mas se vier vazia usamos o nome
-     * oficial do item.
-     */
     const descricao =
       texto(
         corpo?.descricao,
@@ -613,23 +1059,16 @@ export async function POST(req) {
       );
     }
 
-    /**
-     * Por enquanto conferimos estoque,
-     * mas a baixa automática será feita
-     * de forma centralizada no próximo passo.
-     *
-     * Isso evita implementar estoque apenas
-     * para colaborador e esquecer vendas
-     * lançadas pelo admin.
-     */
     if (
-      tipo === "produto"
+      tipo ===
+      "produto"
     ) {
       const estoque =
         Number(
-          catalogo.item
+          catalogo
+            .item
             .estoque ??
-            0
+          0
         );
 
       if (
@@ -644,7 +1083,11 @@ export async function POST(req) {
             erro:
               `Estoque insuficiente. Disponível: ${Math.max(
                 0,
-                estoque || 0
+                Number.isFinite(
+                  estoque
+                )
+                  ? estoque
+                  : 0
               )}.`,
           },
           409
@@ -664,22 +1107,23 @@ export async function POST(req) {
       servico_id:
         tipo ===
         "servico"
-          ? catalogo
-              .item.id
+          ? catalogo.item.id
           : null,
 
       produto_id:
         tipo ===
         "produto"
-          ? catalogo
-              .item.id
+          ? catalogo.item.id
           : null,
 
       descricao,
 
       quantidade,
 
-      valor,
+      valor:
+        Number(
+          catalogo.item.preco
+        ),
 
       forma_pagamento:
         formaPagamento,
@@ -689,32 +1133,39 @@ export async function POST(req) {
       data,
       error,
     } = await db
-      .from("vendas")
-      .insert(dados)
+      .from(
+        "vendas"
+      )
+      .insert(
+        dados
+      )
       .select(
-        [
-          "id",
-          "colaborador_id",
-          "cliente_id",
-          "tipo",
-          "servico_id",
-          "produto_id",
-          "descricao",
-          "quantidade",
-          "valor",
-          "forma_pagamento",
-          "criado_em",
-        ].join(",")
+        COLUNAS_VENDA
       )
       .single();
 
     if (error) {
+      if (
+        erroPareceEstoque(
+          error
+        )
+      ) {
+        return resposta(
+          {
+            erro:
+              "O estoque mudou enquanto a venda era finalizada. Revise a quantidade e tente novamente.",
+          },
+          409
+        );
+      }
+
       throw error;
     }
 
     return resposta(
       {
-        item: data,
+        item:
+          data,
       },
       201
     );
@@ -727,7 +1178,8 @@ export async function POST(req) {
     return resposta(
       {
         erro:
-          process.env.NODE_ENV ===
+          process.env
+            .NODE_ENV ===
           "development"
             ? e?.message ||
               "Não foi possível lançar a venda."
@@ -738,16 +1190,9 @@ export async function POST(req) {
   }
 }
 
-/**
- * DELETE /api/vendas?id=<uuid>
- *
- * Colaborador:
- * só pode excluir venda própria.
- *
- * Admin:
- * pode excluir qualquer venda.
- */
-export async function DELETE(req) {
+export async function DELETE(
+  req
+) {
   try {
     conferirAmbiente();
 
@@ -757,7 +1202,8 @@ export async function DELETE(req) {
     if (!usuario) {
       return resposta(
         {
-          erro: "Sem permissão.",
+          erro:
+            "Sem permissão.",
         },
         403
       );
@@ -773,7 +1219,11 @@ export async function DELETE(req) {
         50
       );
 
-    if (!UUID_RE.test(id)) {
+    if (
+      !UUID_RE.test(
+        id
+      )
+    ) {
       return resposta(
         {
           erro:
@@ -785,17 +1235,15 @@ export async function DELETE(req) {
 
     let consulta =
       db
-        .from("vendas")
+        .from(
+          "vendas"
+        )
         .delete()
         .eq(
           "id",
           id
         );
 
-    /**
-     * Colaborador só pode apagar
-     * lançamento dele mesmo.
-     */
     if (
       usuario.papel ===
       "colaborador"
@@ -810,9 +1258,12 @@ export async function DELETE(req) {
     const {
       data,
       error,
-    } = await consulta
-      .select("id")
-      .maybeSingle();
+    } =
+      await consulta
+        .select(
+          "id"
+        )
+        .maybeSingle();
 
     if (error) {
       throw error;
@@ -829,7 +1280,8 @@ export async function DELETE(req) {
     }
 
     return resposta({
-      ok: true,
+      ok:
+        true,
     });
   } catch (e) {
     console.error(
@@ -840,7 +1292,8 @@ export async function DELETE(req) {
     return resposta(
       {
         erro:
-          process.env.NODE_ENV ===
+          process.env
+            .NODE_ENV ===
           "development"
             ? e?.message ||
               "Não foi possível excluir a venda."

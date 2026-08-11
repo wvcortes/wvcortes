@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, conferirAmbiente, pegarBarbearia } from "@/lib/db";
 import { FUSO_NOME, hora, limitesDoDia, montarInstante } from "@/lib/formato";
+import { resolverUnidadeEfetiva } from "@/lib/unidades";
 
 export const dynamic = "force-dynamic";
 
@@ -141,12 +142,13 @@ export async function GET(req) {
       parametros.get("servico"),
       50
     );
+    const unidadeId = texto(parametros.get("unidade"), 50);
 
     /*
      * Sem data ou profissional ainda não existe
      * informação suficiente para montar a agenda.
      */
-    if (!dataInformada || !profissionalId) {
+    if (!dataInformada || !profissionalId || !unidadeId) {
       return respostaVazia();
     }
 
@@ -166,6 +168,7 @@ export async function GET(req) {
         400
       );
     }
+    if (!UUID_RE.test(unidadeId)) return respostaVazia("Unidade inválida.", 400);
 
     if (
       servicoId &&
@@ -183,7 +186,7 @@ export async function GET(req) {
     const barbearia =
       await pegarBarbearia();
 
-    const aberturaTexto =
+    let aberturaTexto =
       HORA_RE.test(
         String(
           barbearia.hora_abertura ||
@@ -195,7 +198,7 @@ export async function GET(req) {
           )
         : "09:00";
 
-    const fechamentoTexto =
+    let fechamentoTexto =
       HORA_RE.test(
         String(
           barbearia.hora_fechamento ||
@@ -246,6 +249,14 @@ export async function GET(req) {
       return respostaVazia();
     }
 
+    const { data: jornadas = [], error: erroJornada } = await db.from("profissional_horarios").select("hora_inicio,hora_fim").eq("profissional_id", profissionalId).eq("dia_semana", diaDaSemana(dataInformada)).eq("ativo", true).order("hora_inicio");
+    if (erroJornada) throw erroJornada;
+    if (!jornadas.length) return respostaVazia();
+    const inicioProfissional = String(jornadas[0].hora_inicio || "").slice(0, 5);
+    const fimProfissional = String(jornadas[jornadas.length - 1].hora_fim || "").slice(0, 5);
+    if (HORA_RE.test(inicioProfissional) && inicioProfissional > aberturaTexto) aberturaTexto = inicioProfissional;
+    if (HORA_RE.test(fimProfissional) && fimProfissional < fechamentoTexto) fechamentoTexto = fimProfissional;
+
     /*
      * Monta abertura e fechamento
      * usando o fuso da barbearia.
@@ -285,7 +296,7 @@ export async function GET(req) {
       db
         .from("usuarios")
         .select(
-          "id, papel, ativo"
+          "id, papel, ativo, unidade_id"
         )
         .eq(
           "id",
@@ -337,6 +348,13 @@ export async function GET(req) {
         "Profissional indisponível.",
         400
       );
+    }
+    const unidadeEfetiva = await resolverUnidadeEfetiva(profissionalId, dataInformada, profissional.unidade_id);
+    if (unidadeEfetiva !== unidadeId) return respostaVazia("O profissional não atende na unidade selecionada nessa data.", 400);
+    if (servicoId) {
+      const { data: vinculo, error: erroVinculo } = await db.from("profissional_servicos").select("profissional_id").eq("profissional_id", profissionalId).eq("servico_id", servicoId).maybeSingle();
+      if (erroVinculo) throw erroVinculo;
+      if (!vinculo) return respostaVazia("Serviço não realizado por esse profissional.", 400);
     }
 
     /*

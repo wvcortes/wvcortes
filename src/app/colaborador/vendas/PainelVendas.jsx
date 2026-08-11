@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Botao,
@@ -39,14 +35,10 @@ function numero(valor) {
 function quantidadeValida(valor) {
   const convertido = Number(valor);
 
-  if (
-    !Number.isInteger(convertido) ||
-    convertido < 1
-  ) {
-    return 1;
-  }
-
-  return convertido;
+  return Number.isInteger(convertido) &&
+    convertido >= 1
+    ? convertido
+    : 1;
 }
 
 async function lerJson(resposta) {
@@ -60,9 +52,9 @@ async function lerJson(resposta) {
 export default function PainelVendas({
   servicos = [],
   produtos = [],
+  colaboradores = [],
 }) {
   const router = useRouter();
-
   const hoje = diaLocal();
 
   const [dia, setDia] =
@@ -83,6 +75,11 @@ export default function PainelVendas({
   const [apagando, setApagando] =
     useState("");
 
+  const [
+    comandaProdutos,
+    setComandaProdutos,
+  ] = useState({});
+
   const primeiroServico =
     servicos[0] || null;
 
@@ -96,13 +93,13 @@ export default function PainelVendas({
       descricao:
         primeiroServico?.nome || "",
 
-      valor:
-        primeiroServico?.preco ?? "",
-
       quantidade: 1,
 
       forma_pagamento:
         "Dinheiro",
+
+      colaborador_id:
+        colaboradores[0]?.id || "",
     });
 
   const catalogo =
@@ -139,22 +136,97 @@ export default function PainelVendas({
 
   const estoqueSelecionado =
     f.tipo === "produto" &&
-    itemSelecionado &&
-    itemSelecionado.estoque !== undefined &&
-    itemSelecionado.estoque !== null
+    itemSelecionado?.estoque !== undefined &&
+    itemSelecionado?.estoque !== null
       ? Number(
           itemSelecionado.estoque
         )
       : null;
 
+  const quantidadeJaNaComanda =
+    f.tipo === "produto" &&
+    itemSelecionado
+      ? Number(
+          comandaProdutos[
+            itemSelecionado.id
+          ] || 0
+        )
+      : 0;
+
   const estoqueInsuficiente =
     estoqueSelecionado !== null &&
-    quantidade >
+    quantidadeJaNaComanda +
+      quantidade >
       estoqueSelecionado;
 
+  const produtosDaComanda =
+    useMemo(
+      () =>
+        produtos
+          .map(
+            (produto) => {
+              const quantidadeProduto =
+                Number(
+                  comandaProdutos[
+                    produto.id
+                  ] || 0
+                );
+
+              if (
+                quantidadeProduto <
+                1
+              ) {
+                return null;
+              }
+
+              return {
+                ...produto,
+
+                quantidade:
+                  quantidadeProduto,
+
+                subtotal:
+                  numero(
+                    produto.preco
+                  ) *
+                  quantidadeProduto,
+              };
+            }
+          )
+          .filter(Boolean),
+      [
+        produtos,
+        comandaProdutos,
+      ]
+    );
+
+  const totalProdutosComanda =
+    useMemo(
+      () =>
+        produtosDaComanda.reduce(
+          (
+            soma,
+            produto
+          ) =>
+            soma +
+            produto.subtotal,
+          0
+        ),
+      [produtosDaComanda]
+    );
+
+  const totalServico =
+    f.tipo === "servico"
+      ? numero(
+          itemSelecionado?.preco
+        ) *
+        quantidade
+      : 0;
+
   const totalFormulario =
-    numero(f.valor) *
-    quantidade;
+    f.tipo === "produto"
+      ? totalProdutosComanda
+      : totalServico;
 
   async function carregar(
     data = dia
@@ -169,7 +241,8 @@ export default function PainelVendas({
             data
           )}`,
           {
-            cache: "no-store",
+            cache:
+              "no-store",
           }
         );
 
@@ -206,7 +279,53 @@ export default function PainelVendas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dia]);
 
-  function escolherTipo(tipo) {
+  useEffect(() => {
+    setComandaProdutos(
+      (anterior) => {
+        const proximo = {};
+
+        for (
+          const produto
+          of produtos
+        ) {
+          const atual =
+            Number(
+              anterior[
+                produto.id
+              ] || 0
+            );
+
+          const estoque =
+            Math.max(
+              0,
+              Number(
+                produto.estoque ||
+                0
+              )
+            );
+
+          const qtd =
+            Math.min(
+              atual,
+              estoque
+            );
+
+          if (qtd > 0) {
+            proximo[
+              produto.id
+            ] =
+              qtd;
+          }
+        }
+
+        return proximo;
+      }
+    );
+  }, [produtos]);
+
+  function escolherTipo(
+    tipo
+  ) {
     const lista =
       tipo === "servico"
         ? servicos
@@ -217,25 +336,28 @@ export default function PainelVendas({
 
     setErro("");
 
-    setF((anterior) => ({
-      ...anterior,
+    setF(
+      (anterior) => ({
+        ...anterior,
 
-      tipo,
+        tipo,
 
-      catalogo_id:
-        primeiro?.id || "",
+        catalogo_id:
+          primeiro?.id ||
+          "",
 
-      descricao:
-        primeiro?.nome || "",
+        descricao:
+          primeiro?.nome ||
+          "",
 
-      valor:
-        primeiro?.preco ?? "",
-
-      quantidade: 1,
-    }));
+        quantidade: 1,
+      })
+    );
   }
 
-  function escolherItem(id) {
+  function escolherItem(
+    id
+  ) {
     const achado =
       catalogo.find(
         (item) =>
@@ -244,22 +366,178 @@ export default function PainelVendas({
 
     setErro("");
 
-    setF((anterior) => ({
-      ...anterior,
+    setF(
+      (anterior) => ({
+        ...anterior,
 
-      catalogo_id: id,
+        catalogo_id: id,
 
-      descricao:
-        achado?.nome || "",
+        descricao:
+          achado?.nome ||
+          "",
 
-      valor:
-        achado?.preco ?? "",
-
-      quantidade: 1,
-    }));
+        quantidade: 1,
+      })
+    );
   }
 
-  async function lancar(e) {
+  function adicionarProduto() {
+    setErro("");
+
+    if (
+      f.tipo !==
+        "produto" ||
+      !itemSelecionado
+    ) {
+      setErro(
+        "Selecione um produto."
+      );
+
+      return;
+    }
+
+    const estoque =
+      Number(
+        itemSelecionado
+          .estoque ?? 0
+      );
+
+    const jaNaComanda =
+      Number(
+        comandaProdutos[
+          itemSelecionado.id
+        ] || 0
+      );
+
+    if (
+      !Number.isFinite(
+        estoque
+      ) ||
+      estoque < 1
+    ) {
+      setErro(
+        "Esse produto está sem estoque."
+      );
+
+      return;
+    }
+
+    if (
+      jaNaComanda +
+        quantidade >
+      estoque
+    ) {
+      setErro(
+        `Estoque insuficiente. Disponível: ${Math.max(
+          0,
+          estoque -
+            jaNaComanda
+        )}.`
+      );
+
+      return;
+    }
+
+    setComandaProdutos(
+      (anterior) => ({
+        ...anterior,
+
+        [itemSelecionado.id]:
+          Number(
+            anterior[
+              itemSelecionado
+                .id
+            ] || 0
+          ) +
+          quantidade,
+      })
+    );
+
+    setF(
+      (anterior) => ({
+        ...anterior,
+        quantidade: 1,
+      })
+    );
+  }
+
+  function alterarQuantidadeComanda(
+    produto,
+    novaQuantidade
+  ) {
+    setErro("");
+
+    const estoque =
+      Math.max(
+        0,
+        Number(
+          produto.estoque ||
+          0
+        )
+      );
+
+    const qtd =
+      Number(
+        novaQuantidade
+      );
+
+    if (
+      !Number.isInteger(
+        qtd
+      )
+    ) {
+      return;
+    }
+
+    if (qtd <= 0) {
+      removerProdutoComanda(
+        produto.id
+      );
+
+      return;
+    }
+
+    if (qtd > estoque) {
+      setErro(
+        `Estoque insuficiente para ${produto.nome}. Disponível: ${estoque}.`
+      );
+
+      return;
+    }
+
+    setComandaProdutos(
+      (anterior) => ({
+        ...anterior,
+
+        [produto.id]:
+          qtd,
+      })
+    );
+  }
+
+  function removerProdutoComanda(
+    produtoId
+  ) {
+    setErro("");
+
+    setComandaProdutos(
+      (anterior) => {
+        const proximo = {
+          ...anterior,
+        };
+
+        delete proximo[
+          produtoId
+        ];
+
+        return proximo;
+      }
+    );
+  }
+
+  async function lancar(
+    e
+  ) {
     e.preventDefault();
 
     if (salvando) {
@@ -268,80 +546,115 @@ export default function PainelVendas({
 
     setErro("");
 
-    if (!f.catalogo_id) {
+    if (
+      colaboradores.length >
+        0 &&
+      !f.colaborador_id
+    ) {
       setErro(
-        f.tipo === "servico"
-          ? "Selecione um serviço."
-          : "Selecione um produto."
+        "Selecione o profissional responsável."
       );
 
       return;
     }
 
-    if (!f.descricao.trim()) {
-      setErro(
-        "Informe a descrição."
-      );
+    let corpo;
 
-      return;
-    }
+    if (
+      f.tipo ===
+      "produto"
+    ) {
+      if (
+        !produtosDaComanda
+          .length
+      ) {
+        setErro(
+          "Adicione pelo menos um produto à comanda."
+        );
 
-    const valor =
-      numero(f.valor);
+        return;
+      }
 
-    if (valor < 0) {
-      setErro(
-        "Informe um valor válido."
-      );
-
-      return;
-    }
-
-    if (estoqueInsuficiente) {
-      setErro(
-        `Estoque insuficiente. Disponível: ${Math.max(
-          0,
-          estoqueSelecionado
-        )}.`
-      );
-
-      return;
-    }
-
-    setSalvando(true);
-
-    try {
-      const corpo = {
+      corpo = {
         tipo:
-          f.tipo,
+          "produto",
+
+        forma_pagamento:
+          f.forma_pagamento,
+
+        colaborador_id:
+          f.colaborador_id ||
+          undefined,
+
+        itens:
+          produtosDaComanda
+            .map(
+              (
+                produto
+              ) => ({
+                produto_id:
+                  produto.id,
+
+                quantidade:
+                  produto
+                    .quantidade,
+              })
+            ),
+      };
+    } else {
+      if (
+        !f.catalogo_id
+      ) {
+        setErro(
+          "Selecione um serviço."
+        );
+
+        return;
+      }
+
+      if (
+        !f.descricao.trim()
+      ) {
+        setErro(
+          "Informe a descrição."
+        );
+
+        return;
+      }
+
+      corpo = {
+        tipo:
+          "servico",
 
         descricao:
           f.descricao.trim(),
-
-        valor:
-          f.valor,
 
         quantidade,
 
         forma_pagamento:
           f.forma_pagamento,
 
+        colaborador_id:
+          f.colaborador_id ||
+          undefined,
+
         servico_id:
-          f.tipo === "servico"
-            ? f.catalogo_id
-            : null,
+          f.catalogo_id,
 
         produto_id:
-          f.tipo === "produto"
-            ? f.catalogo_id
-            : null,
+          null,
       };
+    }
 
+    setSalvando(true);
+
+    try {
       const resposta =
         await fetch(
           "/api/vendas",
           {
-            method: "POST",
+            method:
+              "POST",
 
             headers: {
               "Content-Type":
@@ -360,22 +673,39 @@ export default function PainelVendas({
           resposta
         );
 
-      if (!resposta.ok) {
+      if (
+        !resposta.ok
+      ) {
         throw new Error(
           dados.erro ||
             "Não foi possível lançar a venda."
         );
       }
 
-      setF((anterior) => ({
-        ...anterior,
-        quantidade: 1,
-      }));
+      if (
+        f.tipo ===
+        "produto"
+      ) {
+        setComandaProdutos(
+          {}
+        );
+      }
 
-      if (dia !== hoje) {
+      setF(
+        (anterior) => ({
+          ...anterior,
+          quantidade: 1,
+        })
+      );
+
+      if (
+        dia !== hoje
+      ) {
         setDia(hoje);
       } else {
-        await carregar(hoje);
+        await carregar(
+          hoje
+        );
       }
 
       router.refresh();
@@ -389,7 +719,9 @@ export default function PainelVendas({
     }
   }
 
-  async function apagar(venda) {
+  async function apagar(
+    venda
+  ) {
     if (apagando) {
       return;
     }
@@ -400,20 +732,21 @@ export default function PainelVendas({
       );
 
     const mensagem =
-      venda.tipo === "produto"
+      venda.tipo ===
+      "produto"
         ? `Excluir este lançamento de ${venda.descricao} ×${qtd}?\n\nA quantidade será devolvida automaticamente ao estoque.`
         : `Excluir este lançamento de ${venda.descricao}?`;
 
-    const confirmou =
-      window.confirm(
+    if (
+      !window.confirm(
         mensagem
-      );
-
-    if (!confirmou) {
+      )
+    ) {
       return;
     }
 
     setErro("");
+
     setApagando(
       venda.id
     );
@@ -425,7 +758,8 @@ export default function PainelVendas({
             venda.id
           )}`,
           {
-            method: "DELETE",
+            method:
+              "DELETE",
           }
         );
 
@@ -434,7 +768,9 @@ export default function PainelVendas({
           resposta
         );
 
-      if (!resposta.ok) {
+      if (
+        !resposta.ok
+      ) {
         throw new Error(
           dados.erro ||
             "Não foi possível excluir o lançamento."
@@ -456,45 +792,58 @@ export default function PainelVendas({
 
   const total =
     itens.reduce(
-      (soma, venda) =>
+      (
+        soma,
+        venda
+      ) =>
         soma +
-        numero(venda.valor) *
+        numero(
+          venda.valor
+        ) *
           quantidadeValida(
             venda.quantidade
           ),
       0
     );
 
-  const porTipo = [
-    "servico",
-    "produto",
-  ].map((tipo) => ({
-    tipo,
+  const porTipo =
+    [
+      "servico",
+      "produto",
+    ].map(
+      (tipo) => ({
+        tipo,
 
-    total: itens
-      .filter(
-        (venda) =>
-          venda.tipo ===
-          tipo
-      )
-      .reduce(
-        (
-          soma,
-          venda
-        ) =>
-          soma +
-          numero(
-            venda.valor
-          ) *
-            quantidadeValida(
-              venda.quantidade
+        total:
+          itens
+            .filter(
+              (
+                venda
+              ) =>
+                venda.tipo ===
+                tipo
+            )
+            .reduce(
+              (
+                soma,
+                venda
+              ) =>
+                soma +
+                numero(
+                  venda.valor
+                ) *
+                  quantidadeValida(
+                    venda
+                      .quantidade
+                  ),
+              0
             ),
-        0
-      ),
-  }));
+      })
+    );
 
   const semItensNoCatalogo =
-    catalogo.length === 0;
+    catalogo.length ===
+    0;
 
   return (
     <>
@@ -508,11 +857,16 @@ export default function PainelVendas({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
         <form
-          onSubmit={lancar}
+          onSubmit={
+            lancar
+          }
           className="border border-linha bg-papel p-7 shadow-carta"
         >
           <p className="etiqueta text-tinta/45">
-            Lançamento rápido
+            {f.tipo ===
+            "produto"
+              ? "Comanda de produtos"
+              : "Lançamento rápido"}
           </p>
 
           {erro ? (
@@ -527,33 +881,91 @@ export default function PainelVendas({
             {[
               "servico",
               "produto",
-            ].map((tipo) => (
-              <button
-                key={tipo}
-                type="button"
-                onClick={() =>
-                  escolherTipo(
+            ].map(
+              (
+                tipo
+              ) => (
+                <button
+                  key={
                     tipo
-                  )
-                }
-                disabled={
-                  salvando
-                }
-                className={`flex-1 border px-4 py-2.5 text-sm capitalize disabled:opacity-50 ${
-                  f.tipo === tipo
-                    ? "border-couro bg-couro text-marfim"
-                    : "border-linha hover:border-couro"
-                }`}
-              >
-                {tipo ===
-                "servico"
-                  ? "Serviço"
-                  : "Produto"}
-              </button>
-            ))}
+                  }
+                  type="button"
+                  onClick={() =>
+                    escolherTipo(
+                      tipo
+                    )
+                  }
+                  disabled={
+                    salvando
+                  }
+                  className={`flex-1 border px-4 py-2.5 text-sm capitalize disabled:opacity-50 ${
+                    f.tipo ===
+                    tipo
+                      ? "border-couro bg-couro text-marfim"
+                      : "border-linha hover:border-couro"
+                  }`}
+                >
+                  {tipo ===
+                  "servico"
+                    ? "Serviço"
+                    : "Produto"}
+                </button>
+              )
+            )}
           </div>
 
           <div className="mt-5 space-y-5">
+            {colaboradores.length >
+            0 ? (
+              <Campo rotulo="Profissional responsável">
+                <select
+                  value={
+                    f.colaborador_id
+                  }
+                  onChange={(e) =>
+                    setF(
+                      (
+                        anterior
+                      ) => ({
+                        ...anterior,
+
+                        colaborador_id:
+                          e
+                            .target
+                            .value,
+                      })
+                    )
+                  }
+                  className={
+                    entradaCls
+                  }
+                  required
+                  disabled={
+                    salvando
+                  }
+                >
+                  {colaboradores.map(
+                    (
+                      colaborador
+                    ) => (
+                      <option
+                        key={
+                          colaborador.id
+                        }
+                        value={
+                          colaborador.id
+                        }
+                      >
+                        {
+                          colaborador.nome
+                        }
+                      </option>
+                    )
+                  )}
+                </select>
+              </Campo>
+            ) : null}
+
             <Campo
               rotulo={
                 f.tipo ===
@@ -586,7 +998,9 @@ export default function PainelVendas({
                   </option>
                 ) : (
                   catalogo.map(
-                    (item) => (
+                    (
+                      item
+                    ) => (
                       <option
                         key={
                           item.id
@@ -613,104 +1027,297 @@ export default function PainelVendas({
             </Campo>
 
             {f.tipo ===
-              "produto" &&
-            estoqueSelecionado !==
-              null ? (
-              <div className="border border-linha bg-marfim/60 px-4 py-3 text-sm">
-                <span className="text-fumaca">
-                  Estoque disponível:
-                </span>{" "}
-                <strong className="font-mono">
-                  {Math.max(
-                    0,
-                    estoqueSelecionado
+            "produto" ? (
+              <>
+                {estoqueSelecionado !==
+                null ? (
+                  <div className="border border-linha bg-marfim/60 px-4 py-3 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-fumaca">
+                        Estoque disponível
+                      </span>
+
+                      <strong className="font-mono">
+                        {Math.max(
+                          0,
+                          estoqueSelecionado
+                        )}
+                      </strong>
+                    </div>
+
+                    {quantidadeJaNaComanda >
+                    0 ? (
+                      <div className="mt-2 flex justify-between gap-2 border-t border-linha pt-2">
+                        <span className="text-fumaca">
+                          Já na comanda
+                        </span>
+
+                        <strong className="font-mono">
+                          {
+                            quantidadeJaNaComanda
+                          }
+                        </strong>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Campo rotulo="Valor unitário (R$)">
+                    <Entrada
+                      type="number"
+                      value={
+                        itemSelecionado
+                          ?.preco ??
+                        ""
+                      }
+                      readOnly
+                      disabled
+                    />
+                  </Campo>
+
+                  <Campo rotulo="Quantidade para adicionar">
+                    <Entrada
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={
+                        f.quantidade
+                      }
+                      onChange={(e) =>
+                        setF(
+                          (
+                            anterior
+                          ) => ({
+                            ...anterior,
+
+                            quantidade:
+                              e
+                                .target
+                                .value,
+                          })
+                        )
+                      }
+                      required
+                      disabled={
+                        salvando
+                      }
+                    />
+                  </Campo>
+                </div>
+
+                <Botao
+                  type="button"
+                  className="w-full"
+                  disabled={
+                    salvando ||
+                    semItensNoCatalogo ||
+                    estoqueInsuficiente ||
+                    estoqueSelecionado ===
+                      0
+                  }
+                  onClick={
+                    adicionarProduto
+                  }
+                >
+                  {estoqueInsuficiente
+                    ? "Estoque insuficiente"
+                    : "Adicionar à comanda"}
+                </Botao>
+
+                <div className="border-t border-dashed border-linha pt-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="etiqueta text-tinta/45">
+                      Produtos da comanda
+                    </p>
+
+                    <span className="text-xs text-fumaca">
+                      {
+                        produtosDaComanda.length
+                      }{" "}
+                      produto(s)
+                    </span>
+                  </div>
+
+                  {produtosDaComanda.length ===
+                  0 ? (
+                    <p className="mt-4 text-sm text-fumaca">
+                      Nenhum produto adicionado.
+                    </p>
+                  ) : (
+                    <div className="mt-4 space-y-4">
+                      {produtosDaComanda.map(
+                        (
+                          produto
+                        ) => (
+                          <div
+                            key={
+                              produto.id
+                            }
+                            className="border border-linha p-4"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold">
+                                  {
+                                    produto.nome
+                                  }
+                                </p>
+
+                                <p className="mt-1 text-xs text-fumaca">
+                                  {dinheiro(
+                                    produto.preco
+                                  )}{" "}
+                                  cada
+                                </p>
+                              </div>
+
+                              <strong className="font-mono text-sm text-couro">
+                                {dinheiro(
+                                  produto.subtotal
+                                )}
+                              </strong>
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    alterarQuantidadeComanda(
+                                      produto,
+                                      produto.quantidade -
+                                        1
+                                    )
+                                  }
+                                  className="flex h-9 w-9 items-center justify-center border border-linha hover:border-couro"
+                                >
+                                  −
+                                </button>
+
+                                <span className="min-w-8 text-center font-mono">
+                                  {
+                                    produto.quantidade
+                                  }
+                                </span>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    alterarQuantidadeComanda(
+                                      produto,
+                                      produto.quantidade +
+                                        1
+                                    )
+                                  }
+                                  disabled={
+                                    produto.quantidade >=
+                                    Number(
+                                      produto.estoque ||
+                                        0
+                                    )
+                                  }
+                                  className="flex h-9 w-9 items-center justify-center border border-linha hover:border-couro disabled:opacity-40"
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removerProdutoComanda(
+                                    produto.id
+                                  )
+                                }
+                                className="text-xs font-semibold text-red-800 hover:underline"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
                   )}
-                </strong>
-              </div>
-            ) : null}
+                </div>
+              </>
+            ) : (
+              <>
+                <Campo
+                  rotulo="Descrição"
+                  ajuda="Pode ajustar, por exemplo: corte + sobrancelha."
+                >
+                  <Entrada
+                    value={
+                      f.descricao
+                    }
+                    onChange={(e) =>
+                      setF(
+                        (
+                          anterior
+                        ) => ({
+                          ...anterior,
 
-            <Campo
-              rotulo="Descrição"
-              ajuda="Pode ajustar, por exemplo: corte + sobrancelha."
-            >
-              <Entrada
-                value={
-                  f.descricao
-                }
-                onChange={(e) =>
-                  setF(
-                    (
-                      anterior
-                    ) => ({
-                      ...anterior,
+                          descricao:
+                            e
+                              .target
+                              .value,
+                        })
+                      )
+                    }
+                    required
+                    disabled={
+                      salvando
+                    }
+                  />
+                </Campo>
 
-                      descricao:
-                        e.target.value,
-                    })
-                  )
-                }
-                required
-                disabled={
-                  salvando
-                }
-              />
-            </Campo>
+                <div className="grid grid-cols-2 gap-4">
+                  <Campo rotulo="Valor unitário (R$)">
+                    <Entrada
+                      type="number"
+                      value={
+                        itemSelecionado
+                          ?.preco ??
+                        ""
+                      }
+                      readOnly
+                      disabled
+                    />
+                  </Campo>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Campo rotulo="Valor unitário (R$)">
-                <Entrada
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={
-                    f.valor
-                  }
-                  onChange={(e) =>
-                    setF(
-                      (
-                        anterior
-                      ) => ({
-                        ...anterior,
+                  <Campo rotulo="Quantidade">
+                    <Entrada
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={
+                        f.quantidade
+                      }
+                      onChange={(e) =>
+                        setF(
+                          (
+                            anterior
+                          ) => ({
+                            ...anterior,
 
-                        valor:
-                          e.target.value,
-                      })
-                    )
-                  }
-                  required
-                  disabled={
-                    salvando
-                  }
-                />
-              </Campo>
-
-              <Campo rotulo="Quantidade">
-                <Entrada
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={
-                    f.quantidade
-                  }
-                  onChange={(e) =>
-                    setF(
-                      (
-                        anterior
-                      ) => ({
-                        ...anterior,
-
-                        quantidade:
-                          e.target.value,
-                      })
-                    )
-                  }
-                  required
-                  disabled={
-                    salvando
-                  }
-                />
-              </Campo>
-            </div>
+                            quantidade:
+                              e
+                                .target
+                                .value,
+                          })
+                        )
+                      }
+                      required
+                      disabled={
+                        salvando
+                      }
+                    />
+                  </Campo>
+                </div>
+              </>
+            )}
 
             <Campo rotulo="Pagamento">
               <select
@@ -725,7 +1332,9 @@ export default function PainelVendas({
                       ...anterior,
 
                       forma_pagamento:
-                        e.target.value,
+                        e
+                          .target
+                          .value,
                     })
                   )
                 }
@@ -737,7 +1346,9 @@ export default function PainelVendas({
                 }
               >
                 {PAGAMENTOS.map(
-                  (pagamento) => (
+                  (
+                    pagamento
+                  ) => (
                     <option
                       key={
                         pagamento
@@ -757,7 +1368,10 @@ export default function PainelVendas({
 
             <div className="flex items-center justify-between border-t border-dashed border-linha pt-4">
               <span className="text-sm text-fumaca">
-                Total
+                {f.tipo ===
+                "produto"
+                  ? "Total da comanda"
+                  : "Total"}
               </span>
 
               <span className="font-mono text-lg font-semibold text-couro">
@@ -773,14 +1387,20 @@ export default function PainelVendas({
             className="mt-7 w-full"
             disabled={
               salvando ||
-              semItensNoCatalogo ||
-              estoqueInsuficiente
+              (f.tipo ===
+                "servico" &&
+                semItensNoCatalogo) ||
+              (f.tipo ===
+                "produto" &&
+                produtosDaComanda.length ===
+                  0)
             }
           >
             {salvando
               ? "Lançando..."
-              : estoqueInsuficiente
-              ? "Estoque insuficiente"
+              : f.tipo ===
+                "produto"
+              ? "Lançar comanda"
               : "Lançar venda"}
           </Botao>
         </form>
@@ -793,7 +1413,9 @@ export default function PainelVendas({
 
             <input
               type="date"
-              value={dia}
+              value={
+                dia
+              }
               onChange={(e) =>
                 setDia(
                   e.target.value
@@ -812,16 +1434,18 @@ export default function PainelVendas({
               ) : null}
 
               {!carregando &&
-                itens.length ===
-                  0 && (
-                  <p className="py-6 text-center text-sm text-fumaca">
-                    Nenhum lançamento nesse dia.
-                  </p>
-                )}
+              itens.length ===
+                0 ? (
+                <p className="py-6 text-center text-sm text-fumaca">
+                  Nenhum lançamento nesse dia.
+                </p>
+              ) : null}
 
               {!carregando &&
                 itens.map(
-                  (venda) => {
+                  (
+                    venda
+                  ) => {
                     const qtd =
                       quantidadeValida(
                         venda.quantidade
@@ -830,7 +1454,8 @@ export default function PainelVendas({
                     const totalVenda =
                       numero(
                         venda.valor
-                      ) * qtd;
+                      ) *
+                      qtd;
 
                     return (
                       <div
@@ -851,7 +1476,8 @@ export default function PainelVendas({
                               venda.descricao
                             }
 
-                            {qtd > 1
+                            {qtd >
+                            1
                               ? ` ×${qtd}`
                               : ""}
                           </span>
@@ -883,7 +1509,7 @@ export default function PainelVendas({
                               apagando ===
                               venda.id
                             }
-                            className="border border-red-800/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-800 transition hover:bg-red-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                            className="border border-red-800/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-800 transition hover:bg-red-800 hover:text-white disabled:opacity-40"
                           >
                             {apagando ===
                             venda.id
@@ -899,7 +1525,9 @@ export default function PainelVendas({
 
             <div className="mt-6 space-y-2 border-t border-dashed border-tinta/25 pt-4">
               {porTipo.map(
-                (grupo) => (
+                (
+                  grupo
+                ) => (
                   <div
                     key={
                       grupo.tipo

@@ -22,9 +22,12 @@ import {
 export default function FormAgendar({
   servicos,
   equipe,
+  unidades = [],
+  vinculos = [],
   usuario,
 }) {
   const [f, setF] = useState({
+    unidade_id: unidades[0]?.id || "",
     nome_cliente:
       usuario?.nome || "",
 
@@ -37,8 +40,7 @@ export default function FormAgendar({
     servico_id:
       servicos[0]?.id || "",
 
-    profissional_id:
-      equipe[0]?.id || "",
+    profissional_id: "",
 
     data:
       diaLocal(),
@@ -56,6 +58,28 @@ export default function FormAgendar({
    * passado
    * encerramento
    */
+  const [equipeFiltrada, setEquipeFiltrada] = useState([]);
+  const servicosFiltrados = servicos;
+
+  useEffect(() => {
+    if (!f.unidade_id || !f.servico_id || !f.data) {
+      setEquipeFiltrada([]);
+      setF((a) => ({ ...a, profissional_id: "", horario: "" }));
+      return;
+    }
+    const controle = new AbortController();
+    const parametros = new URLSearchParams({ unidade: f.unidade_id, servico: f.servico_id, data: f.data });
+    fetch(`/api/profissionais?${parametros}`, { cache: "no-store", signal: controle.signal })
+      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.erro); return d; })
+      .then((d) => {
+        const lista = d.profissionais || [];
+        setEquipeFiltrada(lista);
+        setF((a) => ({ ...a, profissional_id: lista.some((p) => p.id === a.profissional_id) ? a.profissional_id : "", horario: "" }));
+      })
+      .catch((e) => { if (e.name !== "AbortError") setErro(e.message || "Não foi possível consultar os profissionais."); });
+    return () => controle.abort();
+  }, [f.unidade_id, f.servico_id, f.data]);
+
   const [slots, setSlots] =
     useState([]);
 
@@ -132,6 +156,8 @@ export default function FormAgendar({
 
               servico:
                 f.servico_id,
+
+              unidade: f.unidade_id,
             });
 
           const resposta =
@@ -233,6 +259,7 @@ export default function FormAgendar({
         }
       },
       [
+        f.unidade_id,
         f.data,
         f.profissional_id,
         f.servico_id,
@@ -466,6 +493,14 @@ export default function FormAgendar({
         </dl>
 
         <Botao
+          type="button"
+          className="mt-8 mr-3"
+          onClick={() => window.open(`/api/agendamentos/${pronto.id}/whatsapp`, "_blank", "noopener,noreferrer")}
+        >
+          Abrir WhatsApp do profissional
+        </Botao>
+
+        <Botao
           variante="contorno"
           className="mt-8"
           onClick={async () => {
@@ -490,16 +525,24 @@ export default function FormAgendar({
   return (
     <form
       onSubmit={enviar}
-      className="mt-12 space-y-6 border border-linha bg-papel p-7 shadow-carta"
+      className="mt-10 space-y-7 rounded-2xl border border-linha bg-papel p-5 shadow-carta sm:p-8"
     >
+      <Campo rotulo="1. Unidade">
+        <select value={f.unidade_id} onChange={(e) => {
+          const unidade_id = e.target.value;
+          setF((a) => ({ ...a, unidade_id, profissional_id: "", horario: "" }));
+        }} className={entradaCls} required>
+          <option value="">Selecione</option>
+          {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+        </select>
+      </Campo>
       {erro ? (
         <Aviso>
           {erro}
         </Aviso>
       ) : null}
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Campo rotulo="Serviço">
+      <Campo rotulo="2. Serviço">
           <select
             value={
               f.servico_id
@@ -514,7 +557,7 @@ export default function FormAgendar({
             }
             required
           >
-            {servicos.map(
+            {servicosFiltrados.map(
               (servico) => (
                 <option
                   key={
@@ -537,9 +580,13 @@ export default function FormAgendar({
               )
             )}
           </select>
-        </Campo>
+      </Campo>
 
-        <Campo rotulo="Profissional">
+      <Campo rotulo="3. Data">
+        <Entrada type="date" value={f.data} min={diaLocal()} onChange={mudar("data")} required />
+      </Campo>
+
+      <Campo rotulo="4. Profissional">
           <select
             value={
               f.profissional_id
@@ -554,7 +601,8 @@ export default function FormAgendar({
             }
             required
           >
-            {equipe.map(
+            <option value="">Selecione</option>
+            {equipeFiltrada.map(
               (
                 profissional
               ) => (
@@ -573,29 +621,12 @@ export default function FormAgendar({
               )
             )}
           </select>
-        </Campo>
-      </div>
-
-      <Campo rotulo="Dia">
-        <Entrada
-          type="date"
-          value={
-            f.data
-          }
-          min={
-            diaLocal()
-          }
-          onChange={
-            mudar("data")
-          }
-          required
-        />
       </Campo>
 
       <div>
         <div className="flex items-center justify-between gap-3">
           <span className="etiqueta text-tinta/60">
-            Horários
+            5. Horário
           </span>
 
           {buscando &&
@@ -677,11 +708,11 @@ export default function FormAgendar({
                       })
                     )
                   }
-                  className={`relative border px-3.5 py-2 font-mono text-sm transition ${
+                  className={`relative min-w-[72px] rounded-lg border px-3.5 py-2.5 font-mono text-sm transition ${
                     selecionado
-                      ? "border-couro bg-couro text-marfim"
+                      ? "border-couro bg-couro text-marfim shadow-md"
                       : slot.disponivel
-                      ? "border-linha bg-marfim hover:border-couro hover:text-couro"
+                      ? "border-linha bg-white hover:border-couro hover:bg-couro/5 hover:text-couro"
                       : "cursor-not-allowed border-linha/40 bg-tinta/[0.03] text-tinta/25 opacity-60"
                   }`}
                 >
@@ -707,6 +738,7 @@ export default function FormAgendar({
         ) : null}
       </div>
 
+      <p className="etiqueta text-tinta/60">6. Dados do cliente</p>
       <div className="grid gap-5 sm:grid-cols-2">
         <Campo rotulo="Seu nome *">
           <Entrada
@@ -781,7 +813,7 @@ export default function FormAgendar({
           ? "Marcando..."
           : f.horario
           ? `Confirmar ${f.horario}`
-          : "Escolha um horário"}
+          : "Escolha um horário para confirmar"}
       </Botao>
     </form>
   );

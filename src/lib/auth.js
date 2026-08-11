@@ -361,6 +361,7 @@ export async function usuarioAtual() {
         "ativo",
         "especialidade",
         "comissao",
+        "unidade_id",
       ].join(",")
     )
     .eq(

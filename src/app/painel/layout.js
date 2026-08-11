@@ -14,6 +14,8 @@ const MENU = [
   { href: "/painel/assinaturas", texto: "Assinaturas" },
   { href: "/painel/clientes", texto: "Clientes" },
   { href: "/painel/equipe", texto: "Equipe" },
+  { href: "/painel/equipe-config", texto: "Serviços e horários" },
+  { href: "/painel/unidades", texto: "Unidades" },
   { href: "/painel/configuracoes", texto: "Configurações" },
 ];
 

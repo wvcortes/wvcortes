@@ -15,9 +15,9 @@ export default function PainelShell({ usuario, menu, titulo, children }) {
   }
 
   return (
-    <div className="min-h-screen md:grid md:grid-cols-[248px_1fr]">
-      <aside className="flex flex-col bg-tinta text-marfim md:min-h-screen">
-        <div className="flex items-center justify-between px-6 py-6">
+    <div className="min-h-screen bg-marfim md:grid md:grid-cols-[272px_minmax(0,1fr)]">
+      <aside className="flex flex-col bg-tinta text-marfim md:sticky md:top-0 md:h-screen">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
           <div>
             <p className="font-display text-xl leading-none">{usuario.nome}</p>
             <p className="etiqueta mt-1.5 text-latao">{usuario.papel}</p>
@@ -35,8 +35,8 @@ export default function PainelShell({ usuario, menu, titulo, children }) {
                 key={m.href}
                 href={m.href}
                 onClick={() => setAberto(false)}
-                className={`block px-3 py-2.5 text-sm transition ${
-                  ativo ? "bg-couro text-marfim" : "text-marfim/65 hover:bg-marfim/8 hover:text-marfim"
+                className={`mb-1 block rounded-lg px-3 py-2.5 text-sm transition ${
+                  ativo ? "bg-latao text-tinta" : "text-marfim/65 hover:bg-white/5 hover:text-marfim"
                 }`}
               >
                 {m.texto}
@@ -57,7 +57,7 @@ export default function PainelShell({ usuario, menu, titulo, children }) {
         </nav>
       </aside>
 
-      <main className="bg-marfim px-5 py-8 md:px-10 md:py-12">
+      <main className="min-w-0 bg-marfim px-4 py-7 sm:px-6 md:px-10 md:py-10 xl:px-12">
         {titulo ? <h1 className="mb-8 font-display text-4xl">{titulo}</h1> : null}
         {children}
       </main>

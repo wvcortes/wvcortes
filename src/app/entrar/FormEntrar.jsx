@@ -32,7 +32,7 @@ export default function FormEntrar() {
   }
 
   return (
-    <form onSubmit={enviar} className="mt-8 space-y-5">
+    <form onSubmit={enviar} className="space-y-5">
       <Aviso>{erro}</Aviso>
       <Campo rotulo="E-mail">
         <Entrada
