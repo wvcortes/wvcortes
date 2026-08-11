@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tinta: #14100e;
+  --couro: #6b1f2a;
+  --latao: #c8a24a;
+  --marfim: #f5efe6;
+  --papel: #fbf8f3;
+  --linha: #e2d9cc;
+}
+
+html,
+body {
+  background: var(--marfim);
+  color: var(--tinta);
+}
+
+body {
+  font-family: Karla, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Rótulos em versalete-mono: usados em eyebrows, colunas e etiquetas. */
+.etiqueta {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Assinatura da casa: linha de preço com pontilhado guiando o olho,
+   como a lista de preços pintada na parede da barbearia. */
+.linha-preco {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+.linha-preco .pontos {
+  flex: 1;
+  border-bottom: 1px dotted rgba(20, 16, 14, 0.32);
+  transform: translateY(-0.28rem);
+}
+
+/* Faixa fina inspirada no poste de barbeiro. Usada uma única vez. */
+.poste {
+  height: 6px;
+  background: repeating-linear-gradient(
+    115deg,
+    var(--couro) 0 14px,
+    var(--marfim) 14px 28px,
+    var(--latao) 28px 42px,
+    var(--marfim) 42px 56px
+  );
+}
+
+.papel-recibo {
+  background-image: radial-gradient(circle at 50% 0, transparent 6px, var(--papel) 6px);
+  background-size: 16px 16px;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--couro);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.aparecer {
+  animation: sobe 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes sobe {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
