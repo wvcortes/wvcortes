@@ -5,10 +5,12 @@ import PainelShell from "@/components/PainelShell";
 export const dynamic = "force-dynamic";
 
 const MENU = [
-  { href: "/colaborador", texto: "Minha agenda" },
-  { href: "/colaborador/agendar", texto: "Novo atendimento" },
-  { href: "/colaborador/locais", texto: "Meus locais" },
-  { href: "/colaborador/vendas", texto: "Minhas vendas" },
+  { grupo: "Principal", href: "/colaborador", texto: "Início" },
+  { href: "/colaborador/ponto", texto: "Meu ponto" },
+  { href: "/colaborador/novo-atendimento", texto: "Novo atendimento" },
+  { grupo: "Operação", href: "/colaborador/vendas", texto: "Meus atendimentos" },
+  { grupo: "Financeiro", href: "/colaborador/fechamento", texto: "Meu fechamento" },
+  { grupo: "Conta", href: "/colaborador/locais", texto: "Meus locais" },
   { href: "/colaborador/senha", texto: "Alterar senha" },
 ];
 

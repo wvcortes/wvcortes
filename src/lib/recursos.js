@@ -41,6 +41,9 @@ export const RECURSOS = {
     ordenar: { coluna: "nome", crescente: true },
     campos: [
       { nome: "nome", rotulo: "Nome", tipo: "texto", obrigatorio: true },
+      { nome: "latitude", rotulo: "Latitude", tipo: "numero", ajuda: "Use a coordenada real da unidade." },
+      { nome: "longitude", rotulo: "Longitude", tipo: "numero" },
+      { nome: "raio_ponto_m", rotulo: "Raio permitido para ponto (m)", tipo: "inteiro" },
       { nome: "ativo", rotulo: "Ativa", tipo: "booleano", padrao: true },
     ],
   },
@@ -277,10 +280,16 @@ export const RECURSOS = {
         tipo: "texto",
       },
       {
-        nome: "comissao",
+        nome: "comissao_servicos",
         rotulo: "Comissão (%)",
         tipo: "numero",
         padrao: 40,
+      },
+      {
+        nome: "comissao_produtos",
+        rotulo: "Comissão sobre produtos (%)",
+        tipo: "numero",
+        padrao: 0,
       },
       {
         nome: "ativo",

@@ -8,6 +8,8 @@ const MENU = [
   { grupo: "Operação", href: "/painel", texto: "Visão geral" },
   { href: "/painel/agendamentos", texto: "Atendimentos" },
   { href: "/painel/vendas", texto: "Vendas" },
+  { href: "/painel/ponto", texto: "Folha de ponto" },
+  { href: "/painel/fechamentos", texto: "Fechamento semanal" },
   { grupo: "Equipe", href: "/painel/equipe", texto: "Colaboradores" },
   { href: "/painel/equipe-config", texto: "Serviços e horários" },
   { grupo: "Cadastros", href: "/painel/servicos", texto: "Serviços" },

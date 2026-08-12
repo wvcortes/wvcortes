@@ -360,6 +360,8 @@ export async function usuarioAtual() {
         "ativo",
         "especialidade",
         "comissao",
+        "comissao_servicos",
+        "comissao_produtos",
         "unidade_id",
       ].join(",")
     )

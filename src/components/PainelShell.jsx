@@ -28,7 +28,7 @@ export default function PainelShell({ usuario, menu, titulo, children }) {
       {aberto ? <button aria-label="Fechar menu" className="fixed inset-0 z-40 bg-black/65 md:hidden" onClick={() => setAberto(false)} /> : null}
       <aside id="admin-menu" className={`fixed inset-y-0 left-0 z-50 flex w-[min(86vw,300px)] flex-col border-r border-white/10 bg-[#101a15] shadow-2xl transition-transform duration-300 md:sticky md:top-0 md:z-auto md:h-[100dvh] md:w-auto md:translate-x-0 md:shadow-none ${aberto ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5">
-          <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#e2924a]">WV Cortes</p><p className="mt-2 font-semibold leading-none">{usuario.nome}</p><p className="mt-1 text-xs text-[#9ea69e]">Administrador</p></div>
+          <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#e2924a]">WV Cortes</p><p className="mt-2 font-semibold leading-none">{usuario.nome}</p><p className="mt-1 text-xs text-[#9ea69e]">{usuario.papel === "admin" ? "Administrador" : "Colaborador"}</p></div>
           <button className="rounded-lg p-2 text-xl text-[#b9b8ad] md:hidden" aria-label="Fechar menu" onClick={() => setAberto(false)}>×</button>
         </div>
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 [scrollbar-gutter:stable]">

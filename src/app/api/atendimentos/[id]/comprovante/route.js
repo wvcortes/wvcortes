@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { exigirPapel } from "@/lib/auth";
+export async function GET(req,{params}){const usuario=await exigirPapel(["admin","colaborador"]);if(!usuario)return NextResponse.json({erro:"Sem permissão."},{status:403});const {id}=await params;let q=db.from("atendimentos").select("comprovante_path,colaborador_id").eq("id",id);if(usuario.papel==="colaborador")q=q.eq("colaborador_id",usuario.id);const {data}=await q.maybeSingle();if(!data?.comprovante_path)return NextResponse.json({erro:"Comprovante não encontrado."},{status:404});const {data:link,error}=await db.storage.from("comprovantes").createSignedUrl(data.comprovante_path,60);if(error)return NextResponse.json({erro:"Não foi possível abrir o comprovante."},{status:400});return NextResponse.redirect(link.signedUrl)}
