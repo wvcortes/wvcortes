@@ -724,6 +724,20 @@ export async function DELETE(
       );
     }
 
+    if (recurso === "equipe") {
+      const { data, error } = await db
+        .from("usuarios")
+        .update({ ativo: false, excluido_em: new Date().toISOString(), excluido_por: admin.id })
+        .eq("id", id)
+        .eq("papel", "colaborador")
+        .is("excluido_em", null)
+        .select("id")
+        .maybeSingle();
+      if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
+      if (!data) return NextResponse.json({ erro: "Colaborador não encontrado ou já está na lixeira." }, { status: 404 });
+      return NextResponse.json({ ok: true, recuperavel_ate: new Date(Date.now() + 86400000).toISOString() });
+    }
+
     if (
       await possuiDependencias(
         recurso,
@@ -807,5 +821,35 @@ export async function DELETE(
         status: 500,
       }
     );
+  }
+}
+
+export async function PATCH(req, { params }) {
+  try {
+    conferirAmbiente();
+    const admin = await exigirPapel(["admin"]);
+    if (!admin) return NextResponse.json({ erro: "Sem permissão." }, { status: 403 });
+    const { recurso, id } = await params;
+    if (recurso !== "equipe" || !UUID_RE.test(id)) return NextResponse.json({ erro: "Ação inválida." }, { status: 400 });
+    const corpo = await req.json().catch(() => ({}));
+    if (!["restaurar", "desativar", "reativar"].includes(corpo.acao)) return NextResponse.json({ erro: "Ação inválida." }, { status: 400 });
+
+    let consulta = db.from("usuarios").update(
+      corpo.acao === "restaurar"
+        ? { excluido_em: null, excluido_por: null, ativo: true }
+        : { ativo: corpo.acao === "reativar" }
+    ).eq("id", id).eq("papel", "colaborador");
+    if (corpo.acao === "restaurar") {
+      consulta = consulta.not("excluido_em", "is", null)
+        .gte("excluido_em", new Date(Date.now() - 86400000).toISOString());
+    } else {
+      consulta = consulta.is("excluido_em", null);
+    }
+    const { data, error } = await consulta.select("id").maybeSingle();
+    if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
+    if (!data) return NextResponse.json({ erro: corpo.acao === "restaurar" ? "O prazo de recuperação expirou." : "Colaborador não encontrado." }, { status: 409 });
+    return NextResponse.json({ ok: true, id: data.id });
+  } catch (e) {
+    return NextResponse.json({ erro: e?.message || "Não foi possível concluir a ação." }, { status: 500 });
   }
 }

@@ -256,6 +256,8 @@ export default function GerenciadorCrud({
     setBusca,
   ] = useState("");
 
+  const [lixeira, setLixeira] = useState(false);
+
   const colunas =
     useMemo(
       () =>
@@ -273,7 +275,7 @@ export default function GerenciadorCrud({
     try {
       const resposta =
         await fetch(
-          `/api/admin/${recurso}`,
+          `/api/admin/${recurso}${recurso === "equipe" && lixeira ? "?lixeira=1" : ""}`,
           {
             cache:
               "no-store",
@@ -385,7 +387,7 @@ export default function GerenciadorCrud({
     carregarRelacoes();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recurso]);
+  }, [recurso, lixeira]);
 
   async function salvar(
     valores
@@ -461,6 +463,14 @@ export default function GerenciadorCrud({
         };
       }
 
+      if (recurso === "equipe" && !novo && editando.foto_url && editando.foto_url !== valores.foto_url) {
+        await fetch("/api/admin/equipe/foto", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: editando.foto_url }),
+        }).catch(() => null);
+      }
+
       setEditando(
         null
       );
@@ -494,10 +504,11 @@ export default function GerenciadorCrud({
   ) {
     setErroPagina("");
 
-    const confirmou =
-      window.confirm(
-        "Excluir definitivamente este registro?"
-      );
+    const confirmou = window.confirm(
+      recurso === "equipe"
+        ? "EXCLUIR COLABORADOR?\n\nEste colaborador poderá ser recuperado durante as próximas 24 horas.\n\nSe houver registros financeiros ou valores pendentes, eles serão preservados."
+        : "Excluir definitivamente este registro?"
+    );
 
     if (!confirmou) {
       return;
@@ -539,6 +550,18 @@ export default function GerenciadorCrud({
     }
   }
 
+  async function acaoEquipe(item, acao) {
+    setErroPagina("");
+    const resposta = await fetch(`/api/admin/equipe/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ acao }),
+    });
+    const dados = await lerResposta(resposta);
+    if (!resposta.ok) return setErroPagina(dados.erro || "Não foi possível concluir a ação.");
+    await carregar();
+  }
+
   const filtrados =
     itens.filter(
       (item) => {
@@ -577,9 +600,7 @@ export default function GerenciadorCrud({
               : "neutro"
           }
         >
-          {valor
-            ? "sim"
-            : "não"}
+          {recurso === "equipe" ? (valor ? "ATIVO" : "INATIVO") : (valor ? "sim" : "não")}
         </Etiqueta>
       );
     }
@@ -710,6 +731,11 @@ export default function GerenciadorCrud({
         </p>
 
         <div className="flex gap-3">
+          {recurso === "equipe" ? (
+            <Botao variante="contorno" onClick={() => setLixeira((valor) => !valor)}>
+              {lixeira ? "Voltar à equipe" : "Lixeira"}
+            </Botao>
+          ) : null}
           <input
             value={
               busca
@@ -723,7 +749,7 @@ export default function GerenciadorCrud({
             className={`${entradaCls} w-44`}
           />
 
-          <Botao
+          {!lixeira ? <Botao
             onClick={
               abrirNovo
             }
@@ -732,7 +758,7 @@ export default function GerenciadorCrud({
             {
               config.singular
             }
-          </Botao>
+          </Botao> : null}
         </div>
       </div>
 
@@ -821,15 +847,26 @@ export default function GerenciadorCrud({
                           }
                           className="px-4 py-3 align-middle"
                         >
-                          {mostrar(
-                            campo,
-                            item
-                          )}
+                          {recurso === "equipe" && lixeira && campo.nome === "nome" ? (
+                            <div className="flex items-center gap-3">
+                              {item.foto_url ? <img src={item.foto_url} alt="" className="h-10 w-10 rounded-full object-cover" /> : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-marfim">{item.nome?.[0]}</span>}
+                              <span>{item.nome}</span>
+                            </div>
+                          ) : mostrar(campo, item)}
                         </td>
                       )
                     )}
 
                     <td className="whitespace-nowrap px-4 py-3 text-right">
+                      {recurso === "equipe" && lixeira ? (
+                        <>
+                          <span className="mr-4 block text-xs text-fumaca">Excluído em {dataHora(item.excluido_em)} por {item.excluido_por_nome || "administrador"}</span>
+                          <span className="mr-4 text-xs text-fumaca">
+                            {Math.max(0, Math.ceil((new Date(item.excluido_em).getTime() + 86400000 - Date.now()) / 3600000))}h restantes
+                          </span>
+                          <button type="button" onClick={() => acaoEquipe(item, "restaurar")} className="etiqueta text-couro hover:underline">restaurar</button>
+                        </>
+                      ) : <>
                       <button
                         type="button"
                         onClick={() =>
@@ -853,6 +890,12 @@ export default function GerenciadorCrud({
                       >
                         excluir
                       </button>
+                      {recurso === "equipe" ? (
+                        <button type="button" onClick={() => acaoEquipe(item, item.ativo ? "desativar" : "reativar")} className="etiqueta ml-4 text-tinta/60 hover:text-couro">
+                          {item.ativo ? "desativar" : "reativar"}
+                        </button>
+                      ) : null}
+                      </>}
                     </td>
                   </tr>
                 )
@@ -1136,7 +1179,9 @@ function Formulario({
                         campo.ajuda
                       }
                     >
-                      {campo.tipo ===
+                      {campo.tipo === "arquivo_imagem" ? (
+                        <UploadFoto valor={valor} disabled={salvando} aoAlterar={(url) => atualizar(campo.nome, url)} />
+                      ) : campo.tipo ===
                       "area" ? (
                         <textarea
                           rows={
@@ -1357,6 +1402,15 @@ function Formulario({
             )}
         </div>
 
+        {config.titulo === "Unidades WV Cortes" ? (
+          <SeletorMapa
+            latitude={formulario.latitude}
+            longitude={formulario.longitude}
+            raio={formulario.raio_ponto_m}
+            aoAlterar={(latitude, longitude) => setFormulario((anterior) => ({ ...anterior, latitude, longitude }))}
+          />
+        ) : null}
+
         <div className="mt-8 flex gap-3">
           <Botao
             type="submit"
@@ -1385,4 +1439,138 @@ function Formulario({
       </form>
     </div>
   );
+}
+
+function UploadFoto({ valor, aoAlterar, disabled }) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+  async function escolher(evento) {
+    const arquivo = evento.target.files?.[0];
+    if (!arquivo) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(arquivo.type)) return setErro("Use JPG, JPEG, PNG ou WEBP.");
+    if (arquivo.size > 5 * 1024 * 1024) return setErro("A foto deve ter no máximo 5 MB.");
+    setErro("");
+    setEnviando(true);
+    const form = new FormData();
+    form.set("foto", arquivo);
+    const resposta = await fetch("/api/admin/equipe/foto", { method: "POST", body: form });
+    const dados = await lerResposta(resposta);
+    setEnviando(false);
+    if (!resposta.ok) return setErro(dados.erro || "Não foi possível enviar a foto.");
+    aoAlterar(dados.url);
+  }
+  return <div className="space-y-3">
+    {valor ? <img src={valor} alt="Prévia da foto do colaborador" className="h-32 w-32 rounded-full object-cover" /> : <div className="flex h-32 w-32 items-center justify-center rounded-full bg-marfim text-sm text-fumaca">Sem foto</div>}
+    <div className="flex flex-wrap gap-2">
+      <label className="cursor-pointer rounded-xl border border-linha px-4 py-3 text-sm font-bold hover:bg-marfim">
+        {enviando ? "Enviando..." : valor ? "Trocar foto" : "Escolher arquivo"}
+        <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={disabled || enviando} onChange={escolher} />
+      </label>
+      {valor ? <button type="button" className="rounded-xl border border-linha px-4 py-3 text-sm" disabled={disabled || enviando} onClick={() => aoAlterar("")}>Remover foto</button> : null}
+    </div>
+    <p className="text-xs text-fumaca">JPG, JPEG, PNG ou WEBP. Máximo de 5 MB.</p>
+    {erro ? <p className="text-sm text-red-800">{erro}</p> : null}
+  </div>;
+}
+
+function SeletorMapa({ latitude, longitude, raio, aoAlterar }) {
+  const [aberto, setAberto] = useState(false);
+  const [precisao, setPrecisao] = useState(null);
+  const [erro, setErro] = useState("");
+  const mapaRef = useRef(null);
+  const instanciaRef = useRef(null);
+  const marcadorRef = useRef(null);
+  const circuloRef = useRef(null);
+  const coordenadaRef = useRef(null);
+
+  useEffect(() => {
+    if (!aberto || typeof window === "undefined") return;
+    let cancelado = false;
+    async function carregarLeaflet() {
+      if (!document.querySelector('link[data-wv-leaflet]')) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        link.dataset.wvLeaflet = "1";
+        document.head.appendChild(link);
+      }
+      if (!window.L) await new Promise((resolve, reject) => {
+        const existente = document.querySelector('script[data-wv-leaflet]');
+        if (existente) { existente.addEventListener("load", resolve, { once: true }); existente.addEventListener("error", reject, { once: true }); return; }
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.dataset.wvLeaflet = "1";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      if (cancelado || instanciaRef.current || !mapaRef.current) return;
+      const L = window.L;
+      const lat = Number(latitude), lng = Number(longitude);
+      const tem = latitude !== "" && latitude != null && longitude !== "" && longitude != null && Number.isFinite(lat) && Number.isFinite(lng);
+      const centro = tem ? [lat, lng] : [-23.55052, -46.633308];
+      const mapa = L.map(mapaRef.current, { tap: true }).setView(centro, tem ? 18 : 12);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 20, attribution: "&copy; OpenStreetMap" }).addTo(mapa);
+      function posicionar(ponto) {
+        coordenadaRef.current = ponto;
+        if (!marcadorRef.current) {
+          marcadorRef.current = L.marker(ponto, { draggable: true }).addTo(mapa).bindTooltip("LOCALIZAÇÃO DA UNIDADE", { permanent: true, direction: "top" });
+          marcadorRef.current.on("drag", (e) => posicionar(e.target.getLatLng()));
+        } else marcadorRef.current.setLatLng(ponto);
+        if (!circuloRef.current) circuloRef.current = L.circle(ponto, { radius: Number(raio) || 100, color: "#c96f32", fillOpacity: 0.15 }).addTo(mapa);
+        else circuloRef.current.setLatLng(ponto);
+      }
+      if (tem) posicionar(L.latLng(lat, lng));
+      mapa.on("click", (e) => posicionar(e.latlng));
+      instanciaRef.current = mapa;
+      setTimeout(() => mapa.invalidateSize(), 0);
+    }
+    carregarLeaflet().catch(() => setErro("Não foi possível carregar o mapa. Verifique sua conexão."));
+    return () => { cancelado = true; if (instanciaRef.current) instanciaRef.current.remove(); instanciaRef.current = null; marcadorRef.current = null; circuloRef.current = null; };
+  }, [aberto]);
+
+  useEffect(() => { if (circuloRef.current) circuloRef.current.setRadius(Math.max(1, Number(raio) || 100)); }, [raio]);
+
+  function localizacaoAtual() {
+    if (!navigator.geolocation) return setErro("Geolocalização não disponível neste aparelho.");
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setPrecisao(pos.coords.accuracy);
+      const ponto = window.L?.latLng(pos.coords.latitude, pos.coords.longitude);
+      if (ponto && instanciaRef.current) {
+        coordenadaRef.current = ponto;
+        if (!marcadorRef.current) {
+          marcadorRef.current = window.L.marker(ponto, { draggable: true }).addTo(instanciaRef.current).bindTooltip("LOCALIZAÇÃO DA UNIDADE", { permanent: true, direction: "top" });
+          marcadorRef.current.on("drag", (e) => {
+            coordenadaRef.current = e.target.getLatLng();
+            circuloRef.current?.setLatLng(coordenadaRef.current);
+          });
+        }
+        else marcadorRef.current.setLatLng(ponto);
+        if (!circuloRef.current) circuloRef.current = window.L.circle(ponto, { radius: Number(raio) || 100, color: "#c96f32", fillOpacity: .15 }).addTo(instanciaRef.current);
+        else circuloRef.current.setLatLng(ponto);
+        instanciaRef.current.setView(ponto, 18);
+      }
+    }, () => setErro("Não foi possível obter sua localização. Confira a permissão do navegador."), { enableHighAccuracy: true, timeout: 15000 });
+  }
+
+  function confirmar() {
+    if (!coordenadaRef.current) return setErro("Clique no mapa para posicionar o pin.");
+    aoAlterar(Number(coordenadaRef.current.lat.toFixed(7)), Number(coordenadaRef.current.lng.toFixed(7)));
+    setAberto(false);
+  }
+
+  return <div className="mt-6 border border-linha bg-marfim/40 p-4 sm:col-span-2">
+    <p className="font-bold">Localização da unidade</p>
+    <p className="mt-1 text-sm text-fumaca">O círculo mostra até onde o ponto será considerado dentro da unidade.</p>
+    <div className="mt-3 flex flex-wrap gap-3">
+      <Botao type="button" variante="contorno" onClick={() => setAberto((v) => !v)}>Selecionar no mapa</Botao>
+      {aberto ? <Botao type="button" variante="contorno" onClick={localizacaoAtual}>Usar minha localização atual</Botao> : null}
+    </div>
+    {precisao != null ? <p className={`mt-3 text-sm ${precisao > 50 ? "text-amber-800" : "text-fumaca"}`}>Precisão atual: {Math.round(precisao)} m{precisao > 50 ? " — sinal impreciso; ajuste o pin antes de confirmar." : ""}</p> : null}
+    {erro ? <p className="mt-3 text-sm text-red-800">{erro}</p> : null}
+    {aberto ? <div className="mt-4">
+      <div ref={mapaRef} className="h-[55vh] min-h-[320px] w-full touch-pan-x touch-pan-y bg-[#ddd]" aria-label="Mapa para selecionar a localização da unidade" />
+      <button type="button" onClick={confirmar} className="mt-4 min-h-12 w-full rounded-xl bg-[#c96f32] px-5 font-bold text-[#09100d]">Confirmar localização</button>
+    </div> : null}
+  </div>;
 }

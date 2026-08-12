@@ -358,6 +358,7 @@ export async function usuarioAtual() {
         "telefone",
         "papel",
         "ativo",
+        "excluido_em",
         "especialidade",
         "comissao",
         "comissao_servicos",
@@ -382,7 +383,8 @@ export async function usuarioAtual() {
 
   if (
     !data ||
-    !data.ativo
+    !data.ativo ||
+    data.excluido_em
   ) {
     return null;
   }

@@ -263,7 +263,7 @@ export const RECURSOS = {
         obrigatorio: true,
       },
       { nome: "whatsapp_pessoal", rotulo: "WhatsApp pessoal (privado)", tipo: "texto", naTabela: false },
-      { nome: "foto_url", rotulo: "URL da foto", tipo: "texto", naTabela: false },
+      { nome: "foto_url", rotulo: "Foto do colaborador", tipo: "arquivo_imagem", naTabela: false },
       { nome: "unidade_id", rotulo: "Unidade", tipo: "relacao", relacao: { recurso: "unidades", rotulo: "nome" }, obrigatorio: true },
       {
         nome: "senha",
@@ -297,6 +297,8 @@ export const RECURSOS = {
         tipo: "booleano",
         padrao: true,
       },
+      { nome: "excluido_em", rotulo: "Excluído em", tipo: "datahora", somenteLeitura: true, naTabela: false },
+      { nome: "excluido_por", rotulo: "Excluído por", tipo: "texto", somenteLeitura: true, naTabela: false },
     ],
   },
 

@@ -564,6 +564,15 @@ export async function GET(
           colunas
         );
 
+    const lixeira = recurso === "equipe" && new URL(req.url).searchParams.get("lixeira") === "1";
+    if (lixeira) {
+      const limpeza = await db.rpc("limpar_lixeira_colaboradores");
+      if (limpeza.error) throw limpeza.error;
+    }
+    if (recurso === "equipe") {
+      consulta = lixeira ? consulta.not("excluido_em", "is", null) : consulta.is("excluido_em", null);
+    }
+
     if (
       config.filtroFixo
     ) {
@@ -642,14 +651,21 @@ export async function GET(
       );
     }
 
+    let itens = (data || []).map(sanitizarItem);
+    if (lixeira && itens.length) {
+      const ids = [...new Set(itens.map((item) => item.excluido_por).filter(Boolean))];
+      if (ids.length) {
+        const admins = await db.from("usuarios").select("id,nome").in("id", ids);
+        if (!admins.error) {
+          const nomes = Object.fromEntries((admins.data || []).map((item) => [item.id, item.nome]));
+          itens = itens.map((item) => ({ ...item, excluido_por_nome: nomes[item.excluido_por] || null }));
+        }
+      }
+    }
+
     return NextResponse.json(
       {
-        itens:
-          (
-            data || []
-          ).map(
-            sanitizarItem
-          ),
+        itens,
       },
       {
         headers: {
