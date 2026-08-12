@@ -13,7 +13,7 @@ export default async function Agendar() {
     usuario = await usuarioAtual();
   } catch {}
 
-  const { data: unidades = [] } = await db.from("unidades").select("id,nome").eq("ativo", true).order("nome");
+  const { data: unidades = [] } = await db.from("unidades").select("id,nome").eq("ativo", true).is("excluido_em", null).order("nome");
   const { data: servicos = [] } = await db
     .from("servicos")
     .select("id, nome, preco, duracao_min")

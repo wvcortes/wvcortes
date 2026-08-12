@@ -37,7 +37,7 @@ export const RECURSOS = {
   unidades: {
     titulo: "Unidades WV Cortes",
     singular: "unidade",
-    descricao: "Unidades disponíveis para equipe e agendamentos. Desative em vez de excluir unidades com histórico.",
+    descricao: "Unidades disponíveis para equipe e agendamentos. Unidades excluídas ficam 24 horas na lixeira.",
     ordenar: { coluna: "nome", crescente: true },
     campos: [
       { nome: "nome", rotulo: "Nome", tipo: "texto", obrigatorio: true },
@@ -45,6 +45,8 @@ export const RECURSOS = {
       { nome: "longitude", rotulo: "Longitude", tipo: "numero" },
       { nome: "raio_ponto_m", rotulo: "Raio permitido para ponto (m)", tipo: "inteiro" },
       { nome: "ativo", rotulo: "Ativa", tipo: "booleano", padrao: true },
+      { nome: "excluido_em", rotulo: "Excluída em", tipo: "datahora", somenteLeitura: true, naTabela: false },
+      { nome: "excluido_por", rotulo: "Excluída por", tipo: "texto", somenteLeitura: true, naTabela: false },
     ],
   },
   servicos: {

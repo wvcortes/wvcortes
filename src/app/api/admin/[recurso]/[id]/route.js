@@ -538,6 +538,10 @@ export async function PUT(
     }
 
     if (recurso === "equipe" && dados.unidade_id) {
+      const unidade = await db.from("unidades").select("id").eq("id", dados.unidade_id)
+        .eq("ativo", true).is("excluido_em", null).maybeSingle();
+      if (unidade.error) throw unidade.error;
+      if (!unidade.data) return NextResponse.json({ erro: "A unidade padrão informada não está disponível." }, { status: 400 });
       const { data: futuros = [], error: erroFuturos } = await db
         .from("agendamentos")
         .select("inicio,unidade_id")
@@ -738,6 +742,22 @@ export async function DELETE(
       return NextResponse.json({ ok: true, recuperavel_ate: new Date(Date.now() + 86400000).toISOString() });
     }
 
+    if (recurso === "unidades") {
+      const atual = await db.from("unidades").select("id,ativo").eq("id", id).is("excluido_em", null).maybeSingle();
+      if (atual.error) return NextResponse.json({ erro: atual.error.message }, { status: 400 });
+      if (!atual.data) return NextResponse.json({ erro: "Unidade não encontrada ou já está na lixeira." }, { status: 404 });
+      const { data, error } = await db
+        .from("unidades")
+        .update({ ativo: false, ativo_antes_exclusao: atual.data.ativo, excluido_em: new Date().toISOString(), excluido_por: admin.id })
+        .eq("id", id)
+        .is("excluido_em", null)
+        .select("id")
+        .maybeSingle();
+      if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
+      if (!data) return NextResponse.json({ erro: "Unidade não encontrada ou já está na lixeira." }, { status: 404 });
+      return NextResponse.json({ ok: true, recuperavel_ate: new Date(Date.now() + 86400000).toISOString() });
+    }
+
     if (
       await possuiDependencias(
         recurso,
@@ -830,15 +850,31 @@ export async function PATCH(req, { params }) {
     const admin = await exigirPapel(["admin"]);
     if (!admin) return NextResponse.json({ erro: "Sem permissão." }, { status: 403 });
     const { recurso, id } = await params;
-    if (recurso !== "equipe" || !UUID_RE.test(id)) return NextResponse.json({ erro: "Ação inválida." }, { status: 400 });
+    if (!["equipe", "unidades"].includes(recurso) || !UUID_RE.test(id)) return NextResponse.json({ erro: "Ação inválida." }, { status: 400 });
     const corpo = await req.json().catch(() => ({}));
+    if (recurso === "unidades" && corpo.acao === "verificar_exclusao") {
+      const { count, error } = await db.from("usuarios").select("id", { count: "exact", head: true })
+        .eq("papel", "colaborador").eq("ativo", true).is("excluido_em", null).eq("unidade_id", id);
+      if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
+      return NextResponse.json({ colaboradores_ativos: count || 0 });
+    }
     if (!["restaurar", "desativar", "reativar"].includes(corpo.acao)) return NextResponse.json({ erro: "Ação inválida." }, { status: 400 });
 
-    let consulta = db.from("usuarios").update(
-      corpo.acao === "restaurar"
+    const tabela = recurso === "unidades" ? "unidades" : "usuarios";
+    let restauracaoUnidade = null;
+    if (recurso === "unidades" && corpo.acao === "restaurar") {
+      const atual = await db.from("unidades").select("ativo_antes_exclusao").eq("id", id)
+        .not("excluido_em", "is", null).gte("excluido_em", new Date(Date.now() - 86400000).toISOString()).maybeSingle();
+      if (atual.error) return NextResponse.json({ erro: atual.error.message }, { status: 400 });
+      if (!atual.data) return NextResponse.json({ erro: "O prazo de recuperação expirou." }, { status: 409 });
+      restauracaoUnidade = { excluido_em: null, excluido_por: null, ativo: atual.data.ativo_antes_exclusao ?? true, ativo_antes_exclusao: null };
+    }
+    let consulta = db.from(tabela).update(
+      restauracaoUnidade || (corpo.acao === "restaurar"
         ? { excluido_em: null, excluido_por: null, ativo: true }
-        : { ativo: corpo.acao === "reativar" }
-    ).eq("id", id).eq("papel", "colaborador");
+        : { ativo: corpo.acao === "reativar" })
+    ).eq("id", id);
+    if (recurso === "equipe") consulta = consulta.eq("papel", "colaborador");
     if (corpo.acao === "restaurar") {
       consulta = consulta.not("excluido_em", "is", null)
         .gte("excluido_em", new Date(Date.now() - 86400000).toISOString());
@@ -847,7 +883,7 @@ export async function PATCH(req, { params }) {
     }
     const { data, error } = await consulta.select("id").maybeSingle();
     if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
-    if (!data) return NextResponse.json({ erro: corpo.acao === "restaurar" ? "O prazo de recuperação expirou." : "Colaborador não encontrado." }, { status: 409 });
+    if (!data) return NextResponse.json({ erro: corpo.acao === "restaurar" ? "O prazo de recuperação expirou." : `${recurso === "unidades" ? "Unidade" : "Colaborador"} não encontrado.` }, { status: 409 });
     return NextResponse.json({ ok: true, id: data.id });
   } catch (e) {
     return NextResponse.json({ erro: e?.message || "Não foi possível concluir a ação." }, { status: 500 });

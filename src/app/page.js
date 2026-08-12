@@ -20,7 +20,7 @@ export default async function Home() {
     db.from("servicos").select("id,nome,descricao,preco,duracao_min,categoria,ordem").eq("ativo", true).order("ordem", { ascending: true }),
     db.from("planos").select("id,nome,descricao,preco,periodicidade,beneficios,destaque,ordem").eq("ativo", true).order("ordem", { ascending: true }),
     db.from("usuarios").select("id,nome,especialidade,foto_url").eq("papel", "colaborador").eq("ativo", true).order("nome"),
-    db.from("unidades").select("id,nome").eq("ativo", true).order("nome"),
+    db.from("unidades").select("id,nome").eq("ativo", true).is("excluido_em", null).order("nome"),
   ]);
 
   return <>

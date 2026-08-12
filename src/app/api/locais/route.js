@@ -20,7 +20,7 @@ export async function GET(req) {
   const [perfil, excecoes, unidades] = await Promise.all([
     db.from("usuarios").select("id,nome,unidade_id").eq("id", profissionalId).eq("papel", "colaborador").maybeSingle(),
     db.from("profissional_locais_data").select("data,unidade_id,unidades(nome)").eq("profissional_id", profissionalId).gte("data", hoje()).order("data"),
-    db.from("unidades").select("id,nome").eq("ativo", true).order("nome"),
+    db.from("unidades").select("id,nome").eq("ativo", true).is("excluido_em", null).order("nome"),
   ]);
   if (perfil.error || excecoes.error || unidades.error) throw perfil.error || excecoes.error || unidades.error;
   return NextResponse.json({ perfil: perfil.data, excecoes: excecoes.data || [], unidades: unidades.data || [] });
@@ -35,7 +35,7 @@ export async function PUT(req) {
   if (!UUID.test(profissionalId) || !UUID.test(unidadeId) || !DATA.test(data) || data < hoje()) return NextResponse.json({ erro: "Profissional, unidade ou data inválida." }, { status: 400 });
   const conflito = await conflitoDeUnidade(profissionalId, data, unidadeId);
   if (conflito) return NextResponse.json({ erro: "Não é possível mudar o local: existem agendamentos ativos desse profissional em outra unidade nessa data." }, { status: 409 });
-  const unidade = await db.from("unidades").select("id").eq("id", unidadeId).eq("ativo", true).maybeSingle();
+  const unidade = await db.from("unidades").select("id").eq("id", unidadeId).eq("ativo", true).is("excluido_em", null).maybeSingle();
   if (unidade.error || !unidade.data) return NextResponse.json({ erro: "Unidade indisponível." }, { status: 400 });
   const salvo = await db.from("profissional_locais_data").upsert({ profissional_id: profissionalId, data, unidade_id: unidadeId }, { onConflict: "profissional_id,data" });
   if (salvo.error) throw salvo.error;

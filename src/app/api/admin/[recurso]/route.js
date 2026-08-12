@@ -564,13 +564,17 @@ export async function GET(
           colunas
         );
 
-    const lixeira = recurso === "equipe" && new URL(req.url).searchParams.get("lixeira") === "1";
+    const recursoComLixeira = ["equipe", "unidades"].includes(recurso);
+    const lixeira = recursoComLixeira && new URL(req.url).searchParams.get("lixeira") === "1";
     if (lixeira) {
-      const limpeza = await db.rpc("limpar_lixeira_colaboradores");
+      const limpeza = await db.rpc(recurso === "unidades" ? "limpar_lixeira_unidades" : "limpar_lixeira_colaboradores");
       if (limpeza.error) throw limpeza.error;
     }
-    if (recurso === "equipe") {
+    if (recursoComLixeira) {
       consulta = lixeira ? consulta.not("excluido_em", "is", null) : consulta.is("excluido_em", null);
+      if (recurso === "unidades" && lixeira) {
+        consulta = consulta.gte("excluido_em", new Date(Date.now() - 86400000).toISOString());
+      }
     }
 
     if (
@@ -806,6 +810,13 @@ export async function POST(
           dados.email,
           180
         ).toLowerCase();
+    }
+
+    if (recurso === "equipe" && dados.unidade_id) {
+      const unidade = await db.from("unidades").select("id").eq("id", dados.unidade_id)
+        .eq("ativo", true).is("excluido_em", null).maybeSingle();
+      if (unidade.error) throw unidade.error;
+      if (!unidade.data) return NextResponse.json({ erro: "A unidade padrão informada não está disponível." }, { status: 400 });
     }
 
     if (

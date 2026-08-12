@@ -275,7 +275,7 @@ export default function GerenciadorCrud({
     try {
       const resposta =
         await fetch(
-          `/api/admin/${recurso}${recurso === "equipe" && lixeira ? "?lixeira=1" : ""}`,
+          `/api/admin/${recurso}${["equipe", "unidades"].includes(recurso) && lixeira ? "?lixeira=1" : ""}`,
           {
             cache:
               "no-store",
@@ -504,9 +504,23 @@ export default function GerenciadorCrud({
   ) {
     setErroPagina("");
 
+    let colaboradoresAtivos = 0;
+    if (recurso === "unidades") {
+      const previa = await fetch(`/api/admin/unidades/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "verificar_exclusao" }),
+      });
+      const dadosPrevios = await lerResposta(previa);
+      if (!previa.ok) return setErroPagina(dadosPrevios.erro || "Não foi possível verificar os vínculos da unidade.");
+      colaboradoresAtivos = dadosPrevios.colaboradores_ativos || 0;
+    }
+
     const confirmou = window.confirm(
       recurso === "equipe"
         ? "EXCLUIR COLABORADOR?\n\nEste colaborador poderá ser recuperado durante as próximas 24 horas.\n\nSe houver registros financeiros ou valores pendentes, eles serão preservados."
+        : recurso === "unidades"
+        ? `EXCLUIR UNIDADE?\n\nEsta unidade ficará na lixeira por 24 horas e poderá ser restaurada.\n\nOs atendimentos, vendas, registros de ponto e dados financeiros desta unidade serão preservados.${colaboradoresAtivos ? `\n\nExistem ${colaboradoresAtivos} colaboradores ativos vinculados a esta unidade. Eles permanecerão cadastrados, mas precisarão de outra unidade para voltar a operar.` : ""}`
         : "Excluir definitivamente este registro?"
     );
 
@@ -550,9 +564,9 @@ export default function GerenciadorCrud({
     }
   }
 
-  async function acaoEquipe(item, acao) {
+  async function acaoLixeira(item, acao) {
     setErroPagina("");
-    const resposta = await fetch(`/api/admin/equipe/${item.id}`, {
+    const resposta = await fetch(`/api/admin/${recurso}/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ acao }),
@@ -731,9 +745,9 @@ export default function GerenciadorCrud({
         </p>
 
         <div className="flex gap-3">
-          {recurso === "equipe" ? (
+          {["equipe", "unidades"].includes(recurso) ? (
             <Botao variante="contorno" onClick={() => setLixeira((valor) => !valor)}>
-              {lixeira ? "Voltar à equipe" : "Lixeira"}
+              {lixeira ? `Voltar às ${recurso === "unidades" ? "unidades" : "equipe"}` : "Lixeira"}
             </Botao>
           ) : null}
           <input
@@ -858,13 +872,13 @@ export default function GerenciadorCrud({
                     )}
 
                     <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {recurso === "equipe" && lixeira ? (
+                      {["equipe", "unidades"].includes(recurso) && lixeira ? (
                         <>
                           <span className="mr-4 block text-xs text-fumaca">Excluído em {dataHora(item.excluido_em)} por {item.excluido_por_nome || "administrador"}</span>
                           <span className="mr-4 text-xs text-fumaca">
                             {Math.max(0, Math.ceil((new Date(item.excluido_em).getTime() + 86400000 - Date.now()) / 3600000))}h restantes
                           </span>
-                          <button type="button" onClick={() => acaoEquipe(item, "restaurar")} className="etiqueta text-couro hover:underline">restaurar</button>
+                          <button type="button" onClick={() => acaoLixeira(item, "restaurar")} className="etiqueta text-couro hover:underline">restaurar</button>
                         </>
                       ) : <>
                       <button
@@ -890,8 +904,8 @@ export default function GerenciadorCrud({
                       >
                         excluir
                       </button>
-                      {recurso === "equipe" ? (
-                        <button type="button" onClick={() => acaoEquipe(item, item.ativo ? "desativar" : "reativar")} className="etiqueta ml-4 text-tinta/60 hover:text-couro">
+                      {["equipe", "unidades"].includes(recurso) ? (
+                        <button type="button" onClick={() => acaoLixeira(item, item.ativo ? "desativar" : "reativar")} className="etiqueta ml-4 text-tinta/60 hover:text-couro">
                           {item.ativo ? "desativar" : "reativar"}
                         </button>
                       ) : null}
