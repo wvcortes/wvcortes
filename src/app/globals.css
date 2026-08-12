@@ -114,3 +114,33 @@ main button, main a { -webkit-tap-highlight-color: transparent; }
     transform: none;
   }
 }
+
+/* Painel: superfícies dark premium, isoladas do site público. */
+.admin-main { background: radial-gradient(circle at 90% 0, rgba(62,86,65,.24), transparent 32rem), #09100d; color: #f4f1e8; scrollbar-color: #526156 #09100d; }
+.admin-main .bg-papel, .admin-main .bg-marfim, .admin-main .superficie, .admin-main .card-premium { background-color: #15211b !important; }
+.admin-main .papel-recibo { background-color: #18241e; background-image: none; }
+.admin-main .shadow-carta { border-radius: 1rem; box-shadow: 0 18px 42px -28px rgba(0,0,0,.9), inset 0 1px rgba(255,255,255,.025); }
+.admin-main .border-linha, .admin-main .border-linha\/60 { border-color: #34443a !important; }
+.admin-main .text-tinta, .admin-main [class*="text-tinta/"] { color: #f4f1e8 !important; }
+.admin-main .text-fumaca { color: #adb4ac !important; }
+.admin-main .text-couro { color: #e2924a !important; }
+.admin-main .font-display { font-family: Karla, system-ui, sans-serif; letter-spacing: -.02em; }
+.admin-main table { width: 100%; background: #15211b; color: #eef0eb; }
+.admin-main table thead { background: #1d2c24; color: #d9ddd7; }
+.admin-main table tbody tr:hover { background: #1b2a22; }
+.admin-main input:not([type="checkbox"]):not([type="radio"]), .admin-main select, .admin-main textarea { border-color: #415248 !important; background: #0d1712 !important; color: #f4f1e8 !important; }
+.admin-main input::placeholder, .admin-main textarea::placeholder { color: #7f8981 !important; opacity: 1; }
+.admin-main input:disabled, .admin-main select:disabled, .admin-main textarea:disabled { background: #18211c !important; color: #79827b !important; cursor: not-allowed; }
+.admin-main input:focus, .admin-main select:focus, .admin-main textarea:focus { border-color: #d27b3c !important; box-shadow: 0 0 0 3px rgba(210,123,60,.16) !important; }
+.admin-main button[class*="bg-couro"], .admin-main a[class*="bg-couro"] { background: #c96f32 !important; color: white !important; }
+.admin-main button[class*="bg-couro"]:hover, .admin-main a[class*="bg-couro"]:hover { background: #df8240 !important; }
+.admin-main > * { max-width: 100%; }
+.admin-shell nav { scrollbar-width: thin; scrollbar-color: #4b5b50 transparent; }
+.login-dark input { border-color: #415248; background: #0d1712; color: #f4f1e8; }
+.login-dark input::placeholder { color: #7f8981; }
+.login-dark label span { color: #c7cbc5 !important; }
+.login-dark button[type="submit"] { background: #c96f32; color: white; }
+.login-dark button[type="submit"]:hover { background: #df8240; }
+.login-dark p, .login-dark a { color: inherit; }
+
+@media (min-width: 768px) { .admin-shell { height: 100vh; height: 100dvh; } }

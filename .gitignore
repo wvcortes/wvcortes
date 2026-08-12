@@ -2,6 +2,7 @@ node_modules
 .next
 .env
 .env.local
+.tmp-*.log
 .vercel
 .DS_Store
 

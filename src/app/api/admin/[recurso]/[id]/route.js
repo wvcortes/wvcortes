@@ -433,12 +433,13 @@ export async function PUT(
       );
     }
 
+    const parametros = await params;
     const recurso =
-      params.recurso;
+      parametros.recurso;
 
     const id =
       texto(
-        params.id,
+        parametros.id,
         50
       );
 
@@ -669,12 +670,13 @@ export async function DELETE(
       );
     }
 
+    const parametros = await params;
     const recurso =
-      params.recurso;
+      parametros.recurso;
 
     const id =
       texto(
-        params.id,
+        parametros.id,
         50
       );
 

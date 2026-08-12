@@ -226,7 +226,8 @@ export async function criarSessao(
         segredo()
       );
 
-  cookies().set(
+  const cookieStore = await cookies();
+  cookieStore.set(
     NOME_COOKIE,
     token,
     {
@@ -244,8 +245,9 @@ export async function criarSessao(
 /**
  * Remove a sessão atual.
  */
-export function encerrarSessao() {
-  cookies().set(
+export async function encerrarSessao() {
+  const cookieStore = await cookies();
+  cookieStore.set(
     NOME_COOKIE,
     "",
     {
@@ -267,11 +269,8 @@ export function encerrarSessao() {
 export async function lerSessao(
   tokenExterno
 ) {
-  const token =
-    tokenExterno ??
-    cookies().get(
-      NOME_COOKIE
-    )?.value;
+  const cookieStore = tokenExterno === undefined ? await cookies() : null;
+  const token = tokenExterno ?? cookieStore?.get(NOME_COOKIE)?.value;
 
   if (!token) {
     return null;

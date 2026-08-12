@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST() {
   try {
-    encerrarSessao();
+    await encerrarSessao();
 
     return NextResponse.json(
       {
