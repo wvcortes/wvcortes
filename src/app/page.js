@@ -33,7 +33,7 @@ export default async function Home() {
         <div className="relative mx-auto flex min-h-[620px] max-w-7xl items-center px-5 py-20 sm:min-h-[700px] sm:px-6 lg:px-8">
           <div className="aparecer max-w-3xl">
             <p className="etiqueta text-latao">Experiência • precisão • identidade</p>
-            <h1 className="mt-5 font-display text-5xl font-semibold leading-[.92] tracking-tight sm:text-7xl lg:text-8xl">WV<br/><span className="text-latao">Cortes</span></h1>
+            <h1 className="mt-5 font-display text-5xl font-semibold leading-[.92] tracking-tight sm:text-7xl lg:text-8xl">WV<br/><span className="text-latao">Barbearia</span></h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-marfim/75 sm:text-xl">Estilo bem cuidado, atendimento próximo e a confiança de sair da cadeira na sua melhor versão.</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link href="/agendar" className="rounded-lg bg-latao px-7 py-4 text-center text-sm font-bold tracking-wide text-tinta transition hover:bg-white">AGENDAR HORÁRIO</Link>
