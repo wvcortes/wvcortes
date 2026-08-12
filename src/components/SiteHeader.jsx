@@ -15,7 +15,7 @@ export default function SiteHeader({ barbearia, usuario }) {
   const destino = usuario?.papel === "admin" ? "/painel" : usuario?.papel === "colaborador" ? "/colaborador" : "/cliente";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-tinta/95 text-marfim shadow-lg shadow-black/10 backdrop-blur-xl">
+    <header className="site-header sticky top-0 z-50 border-b border-white/10 bg-tinta/95 text-marfim shadow-lg shadow-black/10 backdrop-blur-xl">
       <div className="poste" />
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="group flex min-w-0 items-center gap-3" aria-label="WV Cortes — início">

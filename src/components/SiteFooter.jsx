@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function SiteFooter({ barbearia }) {
   const contato = barbearia?.telefone || barbearia?.email || barbearia?.instagram;
   return (
-    <footer className="mt-16 bg-tinta text-marfim">
+    <footer className="bg-tinta text-marfim">
       <div className="poste" />
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-6 md:grid-cols-[1.2fr_.8fr_.8fr] lg:px-8">
         <div>

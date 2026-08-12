@@ -25,7 +25,7 @@ export default async function Home() {
 
   return <>
     <SiteHeader barbearia={barbearia} usuario={usuario} />
-    <main>
+    <main className="public-site">
       <section className="relative isolate min-h-[620px] overflow-hidden bg-tinta text-marfim sm:min-h-[700px]">
         <Image src="/images/wv/banner-wv.png" alt="Ambiente e identidade da WV Cortes" fill priority sizes="100vw" className="object-cover object-center opacity-65" />
         <div className="absolute inset-0 bg-gradient-to-r from-tinta via-tinta/80 to-tinta/15" />
@@ -43,18 +43,18 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="secao">
+      <section className="public-green"><div className="secao">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="etiqueta text-couro">Serviços em destaque</p><h2 className="titulo-secao">Cuidado em cada detalhe.</h2></div><Link href="/servicos" className="text-sm font-semibold text-couro hover:underline">Ver todos os serviços →</Link></div>
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {(servicos || []).slice(0,6).map((s,i) => <article key={s.id} className="card-premium group flex min-h-56 flex-col p-6 sm:p-7"><div className="flex items-center justify-between"><span className="etiqueta text-fumaca">{s.categoria || "Barbearia"}</span><span className="font-mono text-xs text-fumaca">{String(i+1).padStart(2,"0")}</span></div><h3 className="mt-7 font-display text-2xl font-semibold group-hover:text-couro">{s.nome}</h3><p className="mt-2 flex-1 text-sm leading-relaxed text-fumaca">{s.descricao}</p><div className="mt-6 flex items-end justify-between border-t border-linha pt-4"><span className="text-xs text-fumaca">{s.duracao_min} min</span><strong className="font-mono text-lg text-couro">{dinheiro(s.preco)}</strong></div></article>)}
         </div>
-      </section>
+      </div></section>
 
-      <section className="relative overflow-hidden bg-tinta text-marfim">
+      <section className="public-copper relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(200,169,105,0.10),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(18,63,53,0.55),transparent_42%)]" />
         <div className="secao relative">
           <div className="max-w-2xl">
-            <p className="etiqueta text-latao">Planos mensais</p>
+            <p className="etiqueta text-tinta/70">Planos mensais</p>
             <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Seu cuidado, sempre em dia.</h2>
             <p className="mt-4 max-w-xl leading-relaxed text-marfim/65">Conheça os planos WV e escolha a opção que combina com a sua rotina.</p>
           </div>
@@ -79,7 +79,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="bg-couro text-marfim">
+      <section className="public-forest">
         <div className="mx-auto grid max-w-7xl lg:grid-cols-2">
           <div className="relative min-h-[480px] lg:min-h-[650px]"><Image src="/images/wv/wenderson-perfil.png" alt="Wenderson Valejo, proprietário da WV Cortes" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" /></div>
           <div className="flex items-center px-5 py-16 sm:px-10 lg:px-16"><div><p className="etiqueta text-latao">O nome por trás da cadeira</p><h2 className="mt-4 font-display text-4xl font-semibold sm:text-6xl">Wenderson Valejo</h2><p className="mt-3 text-sm uppercase tracking-[.18em] text-marfim/45">Proprietário da WV Cortes</p><div className="mt-8 max-w-xl whitespace-pre-line text-base leading-8 text-marfim/70">{barbearia.biografia_wenderson || "Técnica, atenção e compromisso com a experiência de cada cliente."}</div><Link href="/agendar" className="mt-9 inline-flex rounded-lg border border-latao/60 px-6 py-3 text-sm font-semibold text-latao transition hover:bg-latao hover:text-tinta">Sentar na cadeira</Link></div></div>

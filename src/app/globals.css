@@ -82,6 +82,41 @@ textarea {
   .card-premium { @apply rounded-2xl border border-linha bg-papel transition duration-300 hover:-translate-y-1 hover:border-latao/60 hover:shadow-carta; }
 }
 
+/* Site publico: superficies noturnas e alternancia verde/cobre. */
+.public-site, body:has(> .site-header) { background: #08110f; color: #f2f0e9; }
+body:has(> .site-header) > main { background: #08110f; color: #f2f0e9; }
+.public-green { background: linear-gradient(145deg, #173c31, #102b24); color: #f4f1e8; }
+.public-forest { background: linear-gradient(145deg, #0d2b23, #081b17); color: #f4f1e8; }
+.public-copper { background: linear-gradient(145deg, #bd6634, #9e4d29); color: #09130f; }
+.public-dark { background: radial-gradient(circle at 85% 10%, rgba(37,83,67,.42), transparent 34rem), #08110f; color: #f4f1e8; }
+.public-site .card-premium, body:has(> .site-header) > main .card-premium, .public-card { border-color: rgba(210,123,60,.34); background: #173229; color: #f4f1e8; box-shadow: 0 20px 50px -32px rgba(0,0,0,.85), inset 0 1px rgba(255,255,255,.035); }
+.public-site .card-premium:hover, .public-card:hover { border-color: rgba(226,146,74,.78); box-shadow: 0 24px 55px -30px rgba(0,0,0,.95); }
+.public-site .border-linha { border-color: rgba(226,146,74,.28); }
+.public-site .text-fumaca { color: #c1c8c2; }
+.public-site .text-couro { color: #eea05c; }
+.public-site .text-tinta\/50, .public-site .text-tinta\/60, .public-site .text-tinta\/70 { color: #c1c8c2; }
+.public-site input, .public-site select, .public-site textarea { border-color: #4a5e51; background: #0c1712; color: #f4f1e8; }
+.public-site input::placeholder, .public-site textarea::placeholder { color: #929d95; opacity: 1; }
+.public-copper .public-card { border-color: rgba(8,17,15,.35); background: #73351f; color: #fff7ed; }
+.public-copper .text-fumaca { color: #f4dfd0; }
+.public-copper .text-couro { color: #08110f; }
+body:has(> .site-header) > main .bg-papel { background-color: #173229; color: #f4f1e8; }
+body:has(> .site-header) > main .bg-white { background-color: #0c1712; color: #f4f1e8; }
+body:has(> .site-header) > main .text-fumaca { color: #c1c8c2; }
+body:has(> .site-header) > main .text-couro { color: #eea05c; }
+body:has(> .site-header) > main .border-linha { border-color: rgba(226,146,74,.28); }
+body:has(> .site-header) > main > section.bg-\[\#e8e5dc\] { background: linear-gradient(145deg, #173c31, #102b24); color: #f4f1e8; }
+body:has(> .site-header) > main > .secao { max-width: none; background: #102b24; padding-left: max(1rem, calc((100vw - 80rem)/2 + 2rem)); padding-right: max(1rem, calc((100vw - 80rem)/2 + 2rem)); }
+body:has(> .site-header) > main input, body:has(> .site-header) > main textarea { border-color: #4a5e51; background: #0c1712; color: #f4f1e8; }
+body:has(> .site-header) > main input::placeholder, body:has(> .site-header) > main textarea::placeholder { color: #929d95; }
+.public-copper > .secao > .max-w-2xl { color: #08110f; }
+.public-copper > .secao > .max-w-2xl .text-marfim\/65 { color: rgba(8,17,15,.72); }
+.public-site > .public-forest + .secao { background: linear-gradient(145deg, #bd6634, #9e4d29); color: #08110f; }
+.public-site > .public-forest + .secao .text-couro { color: #08110f; }
+.public-site > .public-forest + .secao .card-premium { background: #10251e; color: #f4f1e8; }
+.public-site .hover\:bg-white:hover, body:has(> .site-header) .hover\:bg-white:hover { background-color: #e2924a; }
+body:has(> .site-header) > main button[class*="bg-couro"], body:has(> .site-header) > main a[class*="bg-couro"] { background: #d27b3c; color: #08110f; }
+
 /* Superfícies de trabalho: consistência sem reduzir densidade dos painéis. */
 main table thead { background: rgba(18, 63, 53, .055); }
 main table tbody tr { transition: background-color .18s ease; }
