@@ -5,6 +5,8 @@ import { usuarioAtual } from "@/lib/auth";
 import { dinheiro } from "@/lib/formato";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ApresentacaoProfissional from "@/components/ApresentacaoProfissional";
+import EquipePublica from "@/components/EquipePublica";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,7 @@ export default async function Home() {
   ] = await Promise.all([
     db.from("servicos").select("id,nome,descricao,preco,duracao_min,categoria,ordem").eq("ativo", true).order("ordem", { ascending: true }),
     db.from("planos").select("id,nome,descricao,preco,periodicidade,beneficios,destaque,ordem").eq("ativo", true).order("ordem", { ascending: true }),
-    db.from("usuarios").select("id,nome,especialidade,foto_url").eq("papel", "colaborador").eq("ativo", true).order("nome"),
+    db.from("usuarios").select("id,nome,especialidade,foto_url,biografia").eq("papel", "colaborador").eq("ativo", true).order("nome"),
     db.from("unidades").select("id,nome").eq("ativo", true).is("excluido_em", null).order("nome"),
   ]);
 
@@ -80,15 +82,14 @@ export default async function Home() {
       </section>
 
       <section className="public-forest">
-        <div className="mx-auto grid max-w-7xl lg:grid-cols-2">
-          <div className="relative min-h-[480px] lg:min-h-[650px]"><Image src="/images/wv/wenderson-perfil.png" alt="Wenderson Valejo, proprietário da WV Cortes" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" /></div>
-          <div className="flex items-center px-5 py-16 sm:px-10 lg:px-16"><div><p className="etiqueta text-latao">O nome por trás da cadeira</p><h2 className="mt-4 font-display text-4xl font-semibold sm:text-6xl">Wenderson Valejo</h2><p className="mt-3 text-sm uppercase tracking-[.18em] text-marfim/45">Proprietário da WV Cortes</p><div className="mt-8 max-w-xl whitespace-pre-line text-base leading-8 text-marfim/70">{barbearia.biografia_wenderson || "Técnica, atenção e compromisso com a experiência de cada cliente."}</div><Link href="/agendar" className="mt-9 inline-flex rounded-lg border border-latao/60 px-6 py-3 text-sm font-semibold text-latao transition hover:bg-latao hover:text-tinta">Sentar na cadeira</Link></div></div>
+        <div className="mx-auto max-w-7xl">
+          <ApresentacaoProfissional profissional={{ nome: "Wenderson Valejo", especialidade: "Proprietário da WV Cortes", foto_url: "/images/wv/wenderson-perfil.png", biografia: barbearia.biografia_wenderson || "Técnica, atenção e compromisso com a experiência de cada cliente." }} />
         </div>
       </section>
 
       {unidades?.length > 0 && <section className="secao"><p className="etiqueta text-couro">Onde encontrar a WV</p><h2 className="titulo-secao">Escolha sua unidade.</h2><div className="mt-10 grid gap-5 md:grid-cols-3">{unidades.map((u,i)=><article key={u.id} className="card-premium overflow-hidden"><div className="h-1 bg-latao"/><div className="p-7"><span className="font-mono text-xs text-fumaca">0{i+1}</span><h3 className="mt-5 font-display text-2xl font-semibold">{u.nome}</h3><Link href="/agendar" className="mt-7 inline-flex text-sm font-semibold text-couro">Agendar nesta unidade →</Link></div></article>)}</div></section>}
 
-      {equipe?.length > 0 && <section className="bg-[#e8e5dc]"><div className="secao"><p className="etiqueta text-couro">Profissionais</p><h2 className="titulo-secao">Excelência na cadeira.</h2><div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{equipe.map(c=><article key={c.id} className="group overflow-hidden rounded-2xl bg-tinta text-marfim shadow-carta">{c.foto_url ? <div className="relative aspect-[4/3] overflow-hidden"><Image src={c.foto_url} alt={`Profissional ${c.nome}`} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-[1.03]"/></div>:<div className="flex aspect-[4/3] items-center justify-center bg-couro/40 font-display text-5xl text-latao">{c.nome?.[0]}</div>}<div className="p-6"><h3 className="font-display text-2xl">{c.nome}</h3><p className="mt-1 text-sm text-marfim/55">{c.especialidade || "Barbeiro"}</p></div></article>)}</div></div></section>}
+      {equipe?.length > 0 && <section className="bg-[#e8e5dc]"><div className="secao"><p className="etiqueta text-couro">Profissionais</p><h2 className="titulo-secao">Excelência na cadeira.</h2><EquipePublica equipe={equipe} /></div></section>}
 
       <section className="px-5 py-16 sm:px-6 md:py-24"><div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-tinta px-6 py-14 text-center text-marfim shadow-2xl sm:px-10"><p className="etiqueta text-latao">Seu próximo corte começa aqui</p><h2 className="mx-auto mt-4 max-w-2xl font-display text-4xl font-semibold sm:text-6xl">Reserve seu momento na WV Cortes.</h2><Link href="/agendar" className="mt-8 inline-flex rounded-lg bg-latao px-8 py-4 text-sm font-bold text-tinta transition hover:bg-white">AGENDAR AGORA</Link></div></section>
     </main>

@@ -23,6 +23,11 @@ export async function PUT(req) {
   }
   if ("whatsapp" in dados && dados.whatsapp && !/^\d{10,15}$/.test(dados.whatsapp.replace(/\D/g, ""))) return NextResponse.json({ erro: "Informe o WhatsApp com DDI e somente números." }, { status: 400 });
   if ("whatsapp" in dados) dados.whatsapp = dados.whatsapp.replace(/\D/g, "");
+  if ("comissao_produto_unitaria" in corpo) {
+    const valor = Number(corpo.comissao_produto_unitaria);
+    if (!Number.isFinite(valor) || valor < 0 || valor > 1000) return NextResponse.json({ erro: "Comissão fixa por produto inválida." }, { status: 400 });
+    dados.comissao_produto_unitaria = Math.round(valor * 100) / 100;
+  }
 
   const { error } = await db.from("barbearia").update(dados).eq("id", 1);
   if (error) return NextResponse.json({ erro: error.message }, { status: 400 });

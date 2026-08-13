@@ -78,6 +78,8 @@ export const RECURSOS = {
         tipo: "dinheiro",
         obrigatorio: true,
       },
+      { nome: "preco_variavel", rotulo: "Preço variável", tipo: "booleano", padrao: false },
+      { nome: "preco_minimo", rotulo: "Preço mínimo", tipo: "dinheiro", naTabela: false },
       {
         nome: "duracao_min",
         rotulo: "Duração (min)",
@@ -238,6 +240,7 @@ export const RECURSOS = {
 
     valoresFixos: {
       papel: "colaborador",
+      comissao_produtos: 0,
     },
 
     ordenar: {
@@ -262,11 +265,10 @@ export const RECURSOS = {
         nome: "telefone",
         rotulo: "Telefone",
         tipo: "texto",
-        obrigatorio: true,
       },
       { nome: "whatsapp_pessoal", rotulo: "WhatsApp pessoal (privado)", tipo: "texto", naTabela: false },
       { nome: "foto_url", rotulo: "Foto do colaborador", tipo: "arquivo_imagem", naTabela: false },
-      { nome: "unidade_id", rotulo: "Unidade", tipo: "relacao", relacao: { recurso: "unidades", rotulo: "nome" }, obrigatorio: true },
+      { nome: "unidade_id", rotulo: "Unidade (não configurada enquanto vazio)", tipo: "relacao", relacao: { recurso: "unidades", rotulo: "nome" } },
       {
         nome: "senha",
         rotulo: "Senha",
@@ -283,16 +285,11 @@ export const RECURSOS = {
       },
       {
         nome: "comissao_servicos",
-        rotulo: "Comissão (%)",
+        rotulo: "Comissão de serviços (%)",
         tipo: "numero",
-        padrao: 40,
+        ajuda: "Deixe vazio para comissão não configurada.",
       },
-      {
-        nome: "comissao_produtos",
-        rotulo: "Comissão sobre produtos (%)",
-        tipo: "numero",
-        padrao: 0,
-      },
+      { nome: "biografia", rotulo: "Biografia", tipo: "area", naTabela: false },
       {
         nome: "ativo",
         rotulo: "Ativo",

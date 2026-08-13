@@ -139,6 +139,7 @@ const BARBEARIA_PADRAO = Object.freeze({
   pix_cidade: "",
   biografia_wenderson: "",
   agendamento_online_ativo: true,
+  comissao_produto_unitaria: 10,
 });
 
 /**
@@ -176,6 +177,7 @@ export async function pegarBarbearia() {
         "pix_cidade",
         "biografia_wenderson",
         "agendamento_online_ativo",
+        "comissao_produto_unitaria",
       ].join(",")
     )
     .eq(

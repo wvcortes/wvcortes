@@ -20,6 +20,7 @@ const CAMPOS = [
   { nome: "hora_abertura", rotulo: "Abre às", tipo: "time" },
   { nome: "hora_fechamento", rotulo: "Fecha às", tipo: "time" },
   { nome: "intervalo_min", rotulo: "Intervalo entre horários (min)", tipo: "number" },
+  { nome: "comissao_produto_unitaria", rotulo: "Comissão fixa por produto (R$)", tipo: "number" },
 ];
 
 export default function FormConfig({ inicial }) {
