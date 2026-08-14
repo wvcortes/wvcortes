@@ -5,6 +5,7 @@ import { pegarRecurso, tabelaDe } from "@/lib/recursos";
 import { montarPayload } from "@/lib/payload";
 import { diaLocal, limitesDoDia } from "@/lib/formato";
 import { resolverUnidadeEfetiva } from "@/lib/unidades";
+import { validarConfiguracaoComissoes } from "@/lib/comissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -498,6 +499,11 @@ export async function PUT(
         config,
         corpo
       );
+
+    if (recurso === "equipe") {
+      const erroComissao = validarConfiguracaoComissoes(dados);
+      if (erroComissao) return NextResponse.json({ erro: erroComissao }, { status: 400 });
+    }
 
     if (dados.email) {
       dados.email =

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { resolverFotoColaborador } from "@/lib/fotoColaborador";
 
 export default function ApresentacaoProfissional({
   profissional,
@@ -8,13 +9,14 @@ export default function ApresentacaoProfissional({
   aoFechar,
 }) {
   const funcao = profissional.especialidade || "Barbeiro";
+  const fotoSrc = resolverFotoColaborador(profissional.foto_url);
 
   return (
     <div className="grid min-w-0 bg-[#081b17] text-marfim lg:grid-cols-2">
       <div className={`relative min-h-[420px] sm:min-h-[520px] lg:min-h-[650px] ${fotoInteira ? "bg-[#07110e]" : ""}`}>
-        {profissional.foto_url ? (
+        {fotoSrc ? (
           <Image
-            src={profissional.foto_url}
+            src={fotoSrc}
             alt={`${profissional.nome}, ${funcao}`}
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"

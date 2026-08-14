@@ -20,6 +20,7 @@ import {
   dataHora,
   FUSO_NOME,
 } from "@/lib/formato";
+import { resolverFotoColaborador } from "@/lib/fotoColaborador";
 
 async function lerResposta(resposta) {
   try {
@@ -1168,7 +1169,7 @@ function Formulario({
                       !item &&
                       campo.obrigatorioAoCriar
                     )
-                  );
+                  ) || Boolean(campo.tipoComissao && formulario[campo.tipoComissao]);
 
                 const largo =
                   campo.tipo ===
@@ -1181,10 +1182,9 @@ function Formulario({
                     key={
                       campo.nome
                     }
-                    className={
-                      largo
-                    }
+                    className={`${largo} ${campo.grupoInicio ? "sm:col-span-2" : ""}`}
                   >
+                    {campo.grupoInicio ? <h3 className="mb-4 border-b border-linha pb-2 font-display text-xl text-couro">{campo.grupoInicio}</h3> : null}
                     <Campo
                       rotulo={
                         campo.rotulo
@@ -1260,10 +1260,11 @@ function Formulario({
                             salvando
                           }
                           onChange={(e) =>
-                            atualizar(
-                              campo.nome,
-                              e.target.value
-                            )
+                            setFormulario((anterior) => ({
+                              ...anterior,
+                              [campo.nome]: e.target.value,
+                              ...(campo.valorRelacionado && !e.target.value ? { [campo.valorRelacionado]: "" } : {}),
+                            }))
                           }
                           className={
                             entradaCls
@@ -1271,7 +1272,7 @@ function Formulario({
                         >
                           {!obrigatorio ? (
                             <option value="">
-                              Selecione
+                              {campo.opcaoVazia || "Selecione"}
                             </option>
                           ) : null}
 
@@ -1288,7 +1289,7 @@ function Formulario({
                                 }
                               >
                                 {
-                                  opcao
+                                  campo.rotulosOpcoes?.[opcao] || opcao
                                 }
                               </option>
                             )
@@ -1350,6 +1351,8 @@ function Formulario({
                           )}
                         </select>
                       ) : (
+                        <div className={campo.tipoComissao ? "relative" : ""}>
+                        {campo.tipoComissao && formulario[campo.tipoComissao] === "fixo" ? <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-fumaca">R$</span> : null}
                         <Entrada
                           type={
                             campo.tipo ===
@@ -1385,6 +1388,8 @@ function Formulario({
                               ? "0.01"
                               : undefined
                           }
+                          min={campo.tipoComissao ? "0" : undefined}
+                          max={campo.tipoComissao && formulario[campo.tipoComissao] === "percentual" ? "100" : undefined}
                           value={
                             valor ??
                             ""
@@ -1392,9 +1397,8 @@ function Formulario({
                           required={
                             obrigatorio
                           }
-                          disabled={
-                            salvando
-                          }
+                          disabled={salvando || (campo.tipoComissao && !formulario[campo.tipoComissao])}
+                          className={campo.tipoComissao && formulario[campo.tipoComissao] === "fixo" ? "pl-10" : campo.tipoComissao && formulario[campo.tipoComissao] === "percentual" ? "pr-10" : ""}
                           autoComplete={
                             campo.tipo ===
                             "senha"
@@ -1408,6 +1412,8 @@ function Formulario({
                             )
                           }
                         />
+                        {campo.tipoComissao && formulario[campo.tipoComissao] === "percentual" ? <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-fumaca">%</span> : null}
+                        </div>
                       )}
                     </Campo>
                   </div>
@@ -1473,8 +1479,9 @@ function UploadFoto({ valor, aoAlterar, disabled }) {
     if (!resposta.ok) return setErro(dados.erro || "Não foi possível enviar a foto.");
     aoAlterar(dados.url);
   }
+  const fotoSrc = resolverFotoColaborador(valor);
   return <div className="space-y-3">
-    {valor ? <img src={valor} alt="Prévia da foto do colaborador" className="h-32 w-32 rounded-full object-cover" /> : <div className="flex h-32 w-32 items-center justify-center rounded-full bg-marfim text-sm text-fumaca">Sem foto</div>}
+    {fotoSrc ? <img src={fotoSrc} alt="Prévia da foto do colaborador" className="h-32 w-32 rounded-full object-cover" /> : <div className="flex h-32 w-32 items-center justify-center rounded-full bg-marfim text-sm text-fumaca">Sem foto</div>}
     <div className="flex flex-wrap gap-2">
       <label className="cursor-pointer rounded-xl border border-linha px-4 py-3 text-sm font-bold hover:bg-marfim">
         {enviando ? "Enviando..." : valor ? "Trocar foto" : "Escolher arquivo"}

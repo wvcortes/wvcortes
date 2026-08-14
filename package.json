@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test:comissoes": "node scripts/testar-comissoes.mjs",
     "start": "next start",
     "lint": "next lint"
   },

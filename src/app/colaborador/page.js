@@ -22,6 +22,7 @@ export default async function InicioColaborador() {
   const itens = atendimentos.data || [];
   const soma = (campo) => itens.reduce((n, x) => n + Number(x[campo] || 0), 0);
   const proxima = !ultimo ? "REGISTRAR ENTRADA" : ultimo.tipo === "ENTRADA" ? "INICIAR INTERVALO" : ultimo.tipo === "INICIO_INTERVALO" ? "RETORNAR DO INTERVALO" : ultimo.tipo === "RETORNO" ? "REGISTRAR SAÍDA" : "JORNADA ENCERRADA";
+  const descricaoComissao = (tipo, valor, unidade) => tipo === "percentual" ? `${Number(valor)}%` : tipo === "fixo" ? `${dinheiro(valor)} por ${unidade}` : "Não configurada";
   return <div className="space-y-7">
     <div className="grid gap-4 lg:grid-cols-2">
       <Link href="/colaborador/ponto" className="rounded-3xl border border-[#d27b3c]/50 bg-[#173229] p-6 shadow-xl sm:p-8">
@@ -35,5 +36,6 @@ export default async function InicioColaborador() {
     <section><p className="etiqueta text-couro">Hoje</p><div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-5">
       {[["Atendimentos", itens.length],["Serviços", dinheiro(soma("subtotal_servicos"))],["Produtos", dinheiro(soma("subtotal_produtos"))],["Produção", dinheiro(soma("total"))],["Comissão", dinheiro(soma("comissao_servicos")+soma("comissao_produtos"))]].map(([l,v])=><div key={l} className="rounded-2xl border border-linha bg-papel p-5"><p className="text-xs text-fumaca">{l}</p><p className="mt-2 text-xl font-bold">{v}</p></div>)}
     </div></section>
+    <section className="rounded-2xl border border-linha bg-papel p-5"><p className="etiqueta text-couro">MINHAS COMISSÕES</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><p>Serviços: <b>{descricaoComissao(usuario.servico_comissao_tipo,usuario.servico_comissao_valor,"serviço")}</b></p><p>Produtos: <b>{descricaoComissao(usuario.produto_comissao_tipo,usuario.produto_comissao_valor,"unidade")}</b></p></div></section>
   </div>;
 }

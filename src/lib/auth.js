@@ -363,6 +363,10 @@ export async function usuarioAtual() {
         "comissao",
         "comissao_servicos",
         "comissao_produtos",
+        "servico_comissao_tipo",
+        "servico_comissao_valor",
+        "produto_comissao_tipo",
+        "produto_comissao_valor",
         "unidade_id",
       ].join(",")
     )

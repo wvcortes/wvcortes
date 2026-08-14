@@ -283,12 +283,10 @@ export const RECURSOS = {
         rotulo: "Especialidade",
         tipo: "texto",
       },
-      {
-        nome: "comissao_servicos",
-        rotulo: "Comissão de serviços (%)",
-        tipo: "numero",
-        ajuda: "Deixe vazio para comissão não configurada.",
-      },
+      { nome: "servico_comissao_tipo", rotulo: "Tipo", tipo: "selecao", opcoes: ["percentual", "fixo"], rotulosOpcoes: { percentual: "Porcentagem (%)", fixo: "Valor fixo (R$)" }, opcaoVazia: "Não configurada", grupoInicio: "COMISSÃO DE SERVIÇOS", valorRelacionado: "servico_comissao_valor", naTabela: false },
+      { nome: "servico_comissao_valor", rotulo: "Valor", tipo: "numero", tipoComissao: "servico_comissao_tipo", naTabela: false },
+      { nome: "produto_comissao_tipo", rotulo: "Tipo", tipo: "selecao", opcoes: ["percentual", "fixo"], rotulosOpcoes: { percentual: "Porcentagem (%)", fixo: "Valor fixo (R$)" }, opcaoVazia: "Não configurada", grupoInicio: "COMISSÃO DE PRODUTOS", valorRelacionado: "produto_comissao_valor", naTabela: false },
+      { nome: "produto_comissao_valor", rotulo: "Valor", tipo: "numero", tipoComissao: "produto_comissao_tipo", naTabela: false },
       { nome: "biografia", rotulo: "Biografia", tipo: "area", naTabela: false },
       {
         nome: "ativo",

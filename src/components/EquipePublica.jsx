@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import ApresentacaoProfissional from "@/components/ApresentacaoProfissional";
+import { resolverFotoColaborador } from "@/lib/fotoColaborador";
 
 export default function EquipePublica({ equipe }) {
   const [selecionado, setSelecionado] = useState(null);
@@ -54,11 +55,12 @@ export default function EquipePublica({ equipe }) {
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {equipe.map((profissional) => {
           const temBiografia = Boolean(profissional.biografia?.trim());
+          const fotoSrc = resolverFotoColaborador(profissional.foto_url);
           const conteudo = (
             <>
-              {profissional.foto_url ? (
+              {fotoSrc ? (
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image src={profissional.foto_url} alt={`Profissional ${profissional.nome}`} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-[1.03]" />
+                  <Image src={fotoSrc} alt={`Profissional ${profissional.nome}`} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-[1.03]" />
                 </div>
               ) : (
                 <div className="flex aspect-[4/3] items-center justify-center bg-couro/40 font-display text-5xl text-latao" aria-hidden="true">{profissional.nome?.[0]}</div>

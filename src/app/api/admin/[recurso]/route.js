@@ -3,6 +3,7 @@ import { db, conferirAmbiente } from "@/lib/db";
 import { exigirPapel } from "@/lib/auth";
 import { pegarRecurso, tabelaDe } from "@/lib/recursos";
 import { montarPayload } from "@/lib/payload";
+import { validarConfiguracaoComissoes } from "@/lib/comissoes";
 import { diaLocal, limitesDoDia } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
@@ -782,6 +783,11 @@ export async function POST(
         config,
         corpo
       );
+
+    if (recurso === "equipe") {
+      const erroComissao = validarConfiguracaoComissoes(dados);
+      if (erroComissao) return NextResponse.json({ erro: erroComissao }, { status: 400 });
+    }
 
     const tabela =
       tabelaDe(
