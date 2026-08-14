@@ -334,6 +334,15 @@ export async function POST(
       );
     }
 
+    const [usuarioAutenticado, barbearia] = await Promise.all([
+      usuarioAtual().catch(() => null),
+      pegarBarbearia(),
+    ]);
+    const operacaoInterna = ["admin", "colaborador"].includes(usuarioAutenticado?.papel);
+    if (!operacaoInterna && barbearia.agendamento_online_ativo === false) {
+      return resposta({ erro: "Agendamento online indisponível no momento." }, 403);
+    }
+
     let corpo;
 
     try {
@@ -505,7 +514,6 @@ export async function POST(
       );
     }
 
-    const usuarioAutenticado = await usuarioAtual().catch(() => null);
     if (usuarioAutenticado?.papel === "colaborador") profissionalId = usuarioAutenticado.id;
 
     const [
@@ -612,9 +620,6 @@ export async function POST(
         400
       );
     }
-
-    const barbearia =
-      await pegarBarbearia();
 
     const aberturaTexto =
       horaConfigurada(

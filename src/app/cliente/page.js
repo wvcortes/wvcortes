@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
+import { db, pegarBarbearia } from "@/lib/db";
 import { exigirPapel } from "@/lib/auth";
 import { dinheiro, dataHora, dataCurta } from "@/lib/formato";
 import { Etiqueta } from "@/components/ui";
@@ -7,7 +7,10 @@ import { Etiqueta } from "@/components/ui";
 export const dynamic = "force-dynamic";
 
 export default async function MinhaConta() {
-  const u = await exigirPapel(["cliente"]);
+  const [u, barbearia] = await Promise.all([
+    exigirPapel(["cliente"]),
+    pegarBarbearia(),
+  ]);
 
   const { data: agendamentos = [] } = await db
     .from("agendamentos")
@@ -45,9 +48,9 @@ export default async function MinhaConta() {
             {proximos.length === 0 && (
               <div className="px-5 py-10 text-center">
                 <p className="text-sm text-fumaca">Você não tem horário marcado.</p>
-                <Link href="/agendar" className="etiqueta mt-3 inline-block text-couro">
+                {barbearia.agendamento_online_ativo !== false && <Link href="/agendar" className="etiqueta mt-3 inline-block text-couro">
                   marcar agora →
-                </Link>
+                </Link>}
               </div>
             )}
             {proximos.map((a) => (

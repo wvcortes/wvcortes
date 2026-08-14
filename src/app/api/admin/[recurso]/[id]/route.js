@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db, conferirAmbiente } from "@/lib/db";
 import { exigirPapel } from "@/lib/auth";
 import { pegarRecurso, tabelaDe } from "@/lib/recursos";
@@ -635,6 +636,8 @@ export async function PUT(
       );
     }
 
+    if (recurso === "equipe") revalidatePath("/");
+
     return NextResponse.json({
       item:
         sanitizarItem(
@@ -745,6 +748,7 @@ export async function DELETE(
         .maybeSingle();
       if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
       if (!data) return NextResponse.json({ erro: "Colaborador não encontrado ou já está na lixeira." }, { status: 404 });
+      revalidatePath("/");
       return NextResponse.json({ ok: true, recuperavel_ate: new Date(Date.now() + 86400000).toISOString() });
     }
 
@@ -890,6 +894,7 @@ export async function PATCH(req, { params }) {
     const { data, error } = await consulta.select("id").maybeSingle();
     if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
     if (!data) return NextResponse.json({ erro: corpo.acao === "restaurar" ? "O prazo de recuperação expirou." : `${recurso === "unidades" ? "Unidade" : "Colaborador"} não encontrado.` }, { status: 409 });
+    if (recurso === "equipe") revalidatePath("/");
     return NextResponse.json({ ok: true, id: data.id });
   } catch (e) {
     return NextResponse.json({ erro: e?.message || "Não foi possível concluir a ação." }, { status: 500 });

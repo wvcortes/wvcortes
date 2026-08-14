@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { exigirPapel } from "@/lib/auth";
 
@@ -28,8 +29,14 @@ export async function PUT(req) {
     if (!Number.isFinite(valor) || valor < 0 || valor > 1000) return NextResponse.json({ erro: "Comissão fixa por produto inválida." }, { status: 400 });
     dados.comissao_produto_unitaria = Math.round(valor * 100) / 100;
   }
+  if ("agendamento_online_ativo" in corpo) {
+    if (typeof corpo.agendamento_online_ativo !== "boolean") return NextResponse.json({ erro: "Status do agendamento online inválido." }, { status: 400 });
+    dados.agendamento_online_ativo = corpo.agendamento_online_ativo;
+  }
 
   const { error } = await db.from("barbearia").update(dados).eq("id", 1);
   if (error) return NextResponse.json({ erro: error.message }, { status: 400 });
+  revalidatePath("/");
+  revalidatePath("/agendar");
   return NextResponse.json({ ok: true });
 }

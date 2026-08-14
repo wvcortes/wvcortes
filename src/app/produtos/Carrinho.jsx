@@ -453,7 +453,7 @@ export default function Carrinho({
                     key={
                       produto.id
                     }
-                    className="card-premium flex flex-col overflow-hidden p-5"
+                    className="barber-card card-premium flex flex-col overflow-hidden p-5"
                   >
                     {produto.foto_url ? (
                       <div

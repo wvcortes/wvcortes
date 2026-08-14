@@ -36,7 +36,7 @@ export default async function Planos() {
           {(planos || []).map((p) => (
             <div
               key={p.id}
-              className={`flex flex-col border p-8 ${
+              className={`barber-card relative flex flex-col overflow-hidden border p-8 ${
                 p.destaque ? "border-latao bg-[#10251e] text-marfim" : "border-latao/30 bg-[#173229] text-marfim"
               }`}
             >

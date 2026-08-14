@@ -51,6 +51,30 @@ export default function FormConfig({ inicial }) {
           <Aviso tipo={msg.tipo}>{msg.texto}</Aviso>
         </div>
       ) : null}
+      <fieldset className="mb-7 rounded-2xl border border-linha bg-tinta/10 p-5 sm:p-6">
+        <legend className="etiqueta px-2 text-couro">Agendamento online</legend>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">Permitir agendamentos pelo site</p>
+            <p className="mt-1 text-sm text-fumaca">Quando desativado, clientes não podem acessar ou criar novos agendamentos online.</p>
+            <p className="mt-2 text-sm font-semibold" aria-live="polite">
+              Status: {f.agendamento_online_ativo !== false ? "Ativado" : "Desativado"}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={f.agendamento_online_ativo !== false}
+            aria-label="Ativar ou desativar agendamento online"
+            onClick={() => setF({ ...f, agendamento_online_ativo: f.agendamento_online_ativo === false })}
+            className={`relative h-12 w-24 shrink-0 rounded-full border p-1 transition ${f.agendamento_online_ativo !== false ? "border-emerald-500/60 bg-emerald-700" : "border-white/20 bg-[#29342e]"}`}
+          >
+            <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-marfim text-[10px] font-bold text-tinta shadow transition-transform ${f.agendamento_online_ativo !== false ? "translate-x-12" : "translate-x-0"}`} aria-hidden="true">
+              {f.agendamento_online_ativo !== false ? "ON" : "OFF"}
+            </span>
+          </button>
+        </div>
+      </fieldset>
       <div className="grid gap-5 sm:grid-cols-2">
         {CAMPOS.map((c) => (
           <div key={c.nome} className={c.largo ? "sm:col-span-2" : ""}>

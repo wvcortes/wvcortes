@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import ApresentacaoProfissional from "@/components/ApresentacaoProfissional";
 import { resolverFotoColaborador } from "@/lib/fotoColaborador";
 
-export default function EquipePublica({ equipe }) {
+export default function EquipePublica({ equipe, agendamentoAtivo = true }) {
   const [selecionado, setSelecionado] = useState(null);
   const dialogRef = useRef(null);
   const gatilhoRef = useRef(null);
@@ -60,7 +59,15 @@ export default function EquipePublica({ equipe }) {
             <>
               {fotoSrc ? (
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image src={fotoSrc} alt={`Profissional ${profissional.nome}`} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-[1.03]" />
+                  <img
+                    src={fotoSrc}
+                    alt={`Profissional ${profissional.nome}`}
+                    width={1200}
+                    height={900}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  />
                 </div>
               ) : (
                 <div className="flex aspect-[4/3] items-center justify-center bg-couro/40 font-display text-5xl text-latao" aria-hidden="true">{profissional.nome?.[0]}</div>
@@ -74,11 +81,11 @@ export default function EquipePublica({ equipe }) {
           );
 
           return temBiografia ? (
-            <button key={profissional.id} type="button" onClick={(evento) => abrir(profissional, evento.currentTarget)} aria-haspopup="dialog" className="group w-full overflow-hidden rounded-2xl bg-tinta text-marfim shadow-carta transition hover:-translate-y-1 hover:ring-1 hover:ring-latao/70">
+            <button key={profissional.id} type="button" onClick={(evento) => abrir(profissional, evento.currentTarget)} aria-haspopup="dialog" className="barber-card group w-full overflow-hidden rounded-2xl bg-tinta text-marfim shadow-carta transition hover:-translate-y-1 hover:ring-1 hover:ring-latao/70">
               {conteudo}
             </button>
           ) : (
-            <article key={profissional.id} className="group overflow-hidden rounded-2xl bg-tinta text-marfim shadow-carta">{conteudo}</article>
+            <article key={profissional.id} className="barber-card group overflow-hidden rounded-2xl bg-tinta text-marfim shadow-carta">{conteudo}</article>
           );
         })}
       </div>
@@ -88,7 +95,7 @@ export default function EquipePublica({ equipe }) {
           <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={`profissional-${selecionado.id}`} tabIndex={-1} className="relative mx-auto my-3 w-full max-w-6xl overflow-hidden rounded-2xl border border-latao/35 shadow-2xl outline-none sm:my-8">
             <span id={`profissional-${selecionado.id}`} className="sr-only">Apresentação de {selecionado.nome}</span>
             <button type="button" onClick={fechar} aria-label="Fechar apresentação" className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-tinta/90 text-2xl text-marfim transition hover:border-latao hover:text-latao">×</button>
-            <ApresentacaoProfissional profissional={selecionado} cabecalho="Profissional WV" fotoInteira aoFechar={fechar} />
+            <ApresentacaoProfissional profissional={selecionado} cabecalho="Profissional WV" fotoInteira aoFechar={fechar} agendamentoAtivo={agendamentoAtivo} />
           </div>
         </div>
       )}

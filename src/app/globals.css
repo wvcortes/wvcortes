@@ -59,6 +59,26 @@ body {
   );
 }
 
+/* Assinatura Barber Pole histórica, aplicada como microfaixa nos cards públicos. */
+.barber-card {
+  position: relative;
+}
+.barber-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  height: 3px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    115deg,
+    #8e2527 0 12px,
+    var(--marfim) 12px 24px,
+    #244f75 24px 36px,
+    var(--marfim) 36px 48px
+  );
+}
+
 .papel-recibo {
   background-image: radial-gradient(circle at 50% 0, transparent 6px, var(--papel) 6px);
   background-size: 16px 16px;
@@ -85,9 +105,9 @@ textarea {
 /* Site publico: superficies noturnas e alternancia verde/cobre. */
 .public-site, body:has(> .site-header) { background: #08110f; color: #f2f0e9; }
 body:has(> .site-header) > main { background: #08110f; color: #f2f0e9; }
-.public-green { background: linear-gradient(145deg, #173c31, #102b24); color: #f4f1e8; }
-.public-forest { background: linear-gradient(145deg, #0d2b23, #081b17); color: #f4f1e8; }
-.public-copper { background: linear-gradient(145deg, #bd6634, #9e4d29); color: #09130f; }
+.public-green { background: #12352b; color: #f4f1e8; }
+.public-forest { background: #081b17; color: #f4f1e8; }
+.public-copper { background: #ad592f; color: #09130f; border-bottom: 1px solid rgba(200,169,105,.5); }
 .public-dark { background: radial-gradient(circle at 85% 10%, rgba(37,83,67,.42), transparent 34rem), #08110f; color: #f4f1e8; }
 .public-site .card-premium, body:has(> .site-header) > main .card-premium, .public-card { border-color: rgba(210,123,60,.34); background: #173229; color: #f4f1e8; box-shadow: 0 20px 50px -32px rgba(0,0,0,.85), inset 0 1px rgba(255,255,255,.035); }
 .public-site .card-premium:hover, .public-card:hover { border-color: rgba(226,146,74,.78); box-shadow: 0 24px 55px -30px rgba(0,0,0,.95); }
@@ -105,13 +125,13 @@ body:has(> .site-header) > main .bg-white { background-color: #0c1712; color: #f
 body:has(> .site-header) > main .text-fumaca { color: #c1c8c2; }
 body:has(> .site-header) > main .text-couro { color: #eea05c; }
 body:has(> .site-header) > main .border-linha { border-color: rgba(226,146,74,.28); }
-body:has(> .site-header) > main > section.bg-\[\#e8e5dc\] { background: linear-gradient(145deg, #173c31, #102b24); color: #f4f1e8; }
+body:has(> .site-header) > main > section.bg-\[\#e8e5dc\] { background: #12352b; color: #f4f1e8; }
 body:has(> .site-header) > main > .secao { max-width: none; background: #102b24; padding-left: max(1rem, calc((100vw - 80rem)/2 + 2rem)); padding-right: max(1rem, calc((100vw - 80rem)/2 + 2rem)); }
 body:has(> .site-header) > main input, body:has(> .site-header) > main textarea { border-color: #4a5e51; background: #0c1712; color: #f4f1e8; }
 body:has(> .site-header) > main input::placeholder, body:has(> .site-header) > main textarea::placeholder { color: #929d95; }
 .public-copper > .secao > .max-w-2xl { color: #08110f; }
 .public-copper > .secao > .max-w-2xl .text-marfim\/65 { color: rgba(8,17,15,.72); }
-.public-site > .public-forest + .secao { background: linear-gradient(145deg, #bd6634, #9e4d29); color: #08110f; }
+.public-site > .public-forest + .secao { background: #ad592f; color: #08110f; }
 .public-site > .public-forest + .secao .text-couro { color: #08110f; }
 .public-site > .public-forest + .secao .card-premium { background: #10251e; color: #f4f1e8; }
 .public-site .hover\:bg-white:hover, body:has(> .site-header) .hover\:bg-white:hover { background-color: #e2924a; }

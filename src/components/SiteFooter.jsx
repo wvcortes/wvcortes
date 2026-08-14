@@ -9,7 +9,7 @@ export default function SiteFooter({ barbearia }) {
         <div>
           <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-full border border-latao/50 font-display text-sm font-bold text-latao">WV</span><p className="font-display text-2xl">{barbearia?.nome || "WV Cortes"}</p></div>
           {barbearia?.slogan && <p className="mt-5 max-w-sm text-sm leading-relaxed text-marfim/60">{barbearia.slogan}</p>}
-          <Link href="/agendar" className="mt-6 inline-flex rounded-lg bg-latao px-5 py-3 text-sm font-bold text-tinta transition hover:bg-white">Agendar horário</Link>
+          {barbearia?.agendamento_online_ativo !== false && <Link href="/agendar" className="mt-6 inline-flex rounded-lg bg-latao px-5 py-3 text-sm font-bold text-tinta transition hover:bg-white">Agendar horário</Link>}
         </div>
         <div>
           <p className="etiqueta text-latao">Navegue</p>

@@ -1,4 +1,5 @@
 import { db, pegarBarbearia } from "@/lib/db";
+import Link from "next/link";
 import { usuarioAtual } from "@/lib/auth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -12,6 +13,23 @@ export default async function Agendar() {
   try {
     usuario = await usuarioAtual();
   } catch {}
+
+  if (barbearia.agendamento_online_ativo === false) {
+    return (
+      <>
+        <SiteHeader barbearia={barbearia} usuario={usuario} />
+        <main className="public-site flex min-h-[62vh] items-center justify-center px-4 py-16 sm:px-6">
+          <section className="barber-card w-full max-w-2xl overflow-hidden rounded-3xl border border-latao/35 bg-[#10251e] px-6 py-14 text-center shadow-2xl sm:px-12 sm:py-20">
+            <p className="etiqueta text-latao">WV Barbearia</p>
+            <h1 className="mt-5 font-display text-4xl font-semibold text-marfim sm:text-6xl">Agendamento online indisponível no momento.</h1>
+            <p className="mx-auto mt-5 max-w-lg leading-relaxed text-marfim/65">Entre em contato com a WV Barbearia para mais informações.</p>
+            <Link href="/" className="mt-8 inline-flex rounded-lg border border-latao/60 px-6 py-3 text-sm font-semibold text-latao transition hover:bg-latao hover:text-tinta">Voltar ao início</Link>
+          </section>
+        </main>
+        <SiteFooter barbearia={barbearia} />
+      </>
+    );
+  }
 
   const { data: unidades = [] } = await db.from("unidades").select("id,nome").eq("ativo", true).is("excluido_em", null).order("nome");
   const { data: servicos = [] } = await db

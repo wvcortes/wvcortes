@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { resolverFotoColaborador } from "@/lib/fotoColaborador";
 
@@ -7,6 +6,7 @@ export default function ApresentacaoProfissional({
   cabecalho = "O nome por trás da cadeira",
   fotoInteira = false,
   aoFechar,
+  agendamentoAtivo = true,
 }) {
   const funcao = profissional.especialidade || "Barbeiro";
   const fotoSrc = resolverFotoColaborador(profissional.foto_url);
@@ -15,12 +15,14 @@ export default function ApresentacaoProfissional({
     <div className="grid min-w-0 bg-[#081b17] text-marfim lg:grid-cols-2">
       <div className={`relative min-h-[420px] sm:min-h-[520px] lg:min-h-[650px] ${fotoInteira ? "bg-[#07110e]" : ""}`}>
         {fotoSrc ? (
-          <Image
+          <img
             src={fotoSrc}
             alt={`${profissional.nome}, ${funcao}`}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className={fotoInteira ? "object-contain" : "object-cover"}
+            width={1200}
+            height={1200}
+            loading="lazy"
+            decoding="async"
+            className={`absolute inset-0 h-full w-full ${fotoInteira ? "object-contain" : "object-cover"}`}
           />
         ) : (
           <div className="flex h-full min-h-[420px] items-center justify-center bg-couro/40 font-display text-8xl text-latao" aria-hidden="true">
@@ -40,11 +42,11 @@ export default function ApresentacaoProfissional({
             <button type="button" onClick={aoFechar} className="mt-9 inline-flex rounded-lg border border-latao/60 px-6 py-3 text-sm font-semibold text-latao transition hover:bg-latao hover:text-tinta">
               Fechar apresentação
             </button>
-          ) : (
+          ) : agendamentoAtivo ? (
             <Link href="/agendar" className="mt-9 inline-flex rounded-lg border border-latao/60 px-6 py-3 text-sm font-semibold text-latao transition hover:bg-latao hover:text-tinta">
               Sentar na cadeira
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

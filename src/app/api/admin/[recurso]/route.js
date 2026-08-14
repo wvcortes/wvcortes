@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db, conferirAmbiente } from "@/lib/db";
 import { exigirPapel } from "@/lib/auth";
 import { pegarRecurso, tabelaDe } from "@/lib/recursos";
@@ -900,6 +901,8 @@ export async function POST(
         }
       );
     }
+
+    if (recurso === "equipe") revalidatePath("/");
 
     return NextResponse.json(
       {
